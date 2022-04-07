@@ -5299,6 +5299,10 @@ Function New-ZabbixHostInterface {
 		#UseIP: Possible values are:  0 - connect using host DNS name;  1 - connect using host IP address for this host interface. 
 		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$useIP="1",
 		#[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$InterfaceID,
+		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$SnmpVersion="2",
+		#SnmpBulk: Possible values are:  0 - don't use bulk requests;  1 - use bulk requests. 
+		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$SnmpBulk="1",
+		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$SnmpCommunity='{$SNMP_COMMUNITY}',
 		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
@@ -5313,21 +5317,46 @@ Function New-ZabbixHostInterface {
 		$boundparams=$PSBoundParameters | out-string
 		write-verbose "($boundparams)"
 
-		$Body = @{
-			method = "hostinterface.create"
-			params = @{
-				hostid = $HostID
-				main = $main
-				dns = $dns
-				port = $Port
-				ip = $IP
-				useip = $useIP
-				type = $type
-			}
+		if ($type -eq "2") {
+			$Body = @{
+				method = "hostinterface.create"
+				params = @{
+					hostid = $HostID
+					main = $main
+					dns = $dns
+					port = $Port
+					ip = $IP
+					useip = $useIP
+					type = $type
+					details = @{
+						version = $SnmpVersion
+						bulk = $SnmpBulk
+						community = $SnmpCommunity
+					}
+				}
 
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id = $id
+				auth = $session
+			}
+		}
+		else {
+			$Body = @{
+				method = "hostinterface.create"
+				params = @{
+					hostid = $HostID
+					main = $main
+					dns = $dns
+					port = $Port
+					ip = $IP
+					useip = $useIP
+					type = $type
+				}
+
+				jsonrpc = $jsonrpc
+				id = $id
+				auth = $session
+			}
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
