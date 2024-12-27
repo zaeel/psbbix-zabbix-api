@@ -25,23 +25,23 @@ function Remove-EmptyLines {
 	#>
 	
 	[cmdletbinding()]
-    [Alias("rmel")]
-    param ([Parameter(Mandatory=$false,Position=0,ValueFromPipeline=$true)][array]$in)
+	[Alias('rmel')]
+	param ([Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true)][array]$in)
 	
 	process {
 		if (!$psboundparameters.count) {
-			help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines
+			help -ex $PSCmdlet.MyInvocation.MyCommand.Name | Out-String | Remove-EmptyLines
 			return
 		}
 		
-		$in.split("`r`n") | ? {$_.trim() -ne ""}
+		$in.split("`r`n") | Where-Object { $_.trim() -ne '' }
 	}
 }
 
 Function Write-MissingParamsMessage {
 	Write-Host "`nMissing parameters!`n" -f red
-	sleep 1
-	Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines
+	Start-Sleep 1
+	Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | Out-String | Remove-EmptyLines
 }
 
 Function Get-ZabbixHelp {
@@ -88,23 +88,23 @@ Function Get-ZabbixHelp {
 		Get help for cassandra items if you're using my cassandra cluster template
 	#>
     
-    [CmdletBinding()]
-    [Alias("gzh")]
-    Param ($znoun,$zverb,[switch]$list,$pattern,[switch]$short,[switch]$alias)
+	[CmdletBinding()]
+	[Alias('gzh')]
+	Param ($znoun, $zverb, [switch]$list, $pattern, [switch]$short, [switch]$alias)
     
-	if (!(get-module "Find-String")) {Write-Host "`nInstall module Find-String from Powershell Gallery: install-module find-string -force. Unless this function won't work properly.`n" -f yellow; return }
-	if (!$psboundparameters.count) {Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines; return}
+	if (!(Get-Module 'Find-String')) { Write-Host "`nInstall module Find-String from Powershell Gallery: install-module find-string -force. Unless this function won't work properly.`n" -f yellow; return }
+	if (!$psboundparameters.count) { Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | Out-String | Remove-EmptyLines; return }
 
-    if ($list) {dir function:\*-zabbix* | select name | sort name}
-	elseif ($alias) {gcm -Module psbbix | %{gal -Definition $_.name -ea 0}}
-    elseif (!$znoun -and $pattern -and $short) {gzh | %{foreach ($i in $_) {$i | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches}}}
-    elseif (!$znoun -and $pattern -and !$short) {gzh | out-string | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches}
-    elseif ($znoun -and $pattern -and !$short) {gzh $znoun | out-string | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches}
-    elseif ($znoun -and $pattern -and $short) {gzh $znoun | %{foreach ($i in $_) {$i | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches}}}
-    elseif ($zverb -and !$znoun) {dir function:\$zverb-zabbix* | %{write-host $_.Name -f yellow; get-help -ex $_.Name | out-string | Remove-EmptyLines}}
-    elseif ($znoun -and !$zverb) {dir function:\*zabbix$znoun | %{write-host $_.Name -f yellow; get-help -ex $_.Name | out-string | Remove-EmptyLines}}
-    elseif ($zverb -and $znoun) {dir function:\$zverb-zabbix$znoun | %{write-host $_.Name -f yellow; get-help -ex $_.Name | out-string | Remove-EmptyLines}}
-    else {dir function:\*zabbix* | %{write-host $_.Name -f yellow; get-help -ex $_.Name | out-string | Remove-EmptyLines}}
+	if ($list) { Get-ChildItem function:\*-zabbix* | Select-Object name | Sort-Object name }
+	elseif ($alias) { Get-Command -Module psbbix | ForEach-Object { Get-Alias -Definition $_.name -ea 0 } }
+	elseif (!$znoun -and $pattern -and $short) { gzh | ForEach-Object { foreach ($i in $_) { $i | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches } } }
+	elseif (!$znoun -and $pattern -and !$short) { gzh | Out-String | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches }
+	elseif ($znoun -and $pattern -and !$short) { gzh $znoun | Out-String | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches }
+	elseif ($znoun -and $pattern -and $short) { gzh $znoun | ForEach-Object { foreach ($i in $_) { $i | Select-String -Pattern $pattern -AllMatches | Out-ColorMatchInfo -onlyShowMatches } } }
+	elseif ($zverb -and !$znoun) { Get-ChildItem function:\$zverb-zabbix* | ForEach-Object { Write-Host $_.Name -f yellow; Get-Help -ex $_.Name | Out-String | Remove-EmptyLines } }
+	elseif ($znoun -and !$zverb) { Get-ChildItem function:\*zabbix$znoun | ForEach-Object { Write-Host $_.Name -f yellow; Get-Help -ex $_.Name | Out-String | Remove-EmptyLines } }
+	elseif ($zverb -and $znoun) { Get-ChildItem function:\$zverb-zabbix$znoun | ForEach-Object { Write-Host $_.Name -f yellow; Get-Help -ex $_.Name | Out-String | Remove-EmptyLines } }
+	else { Get-ChildItem function:\*zabbix* | ForEach-Object { Write-Host $_.Name -f yellow; Get-Help -ex $_.Name | Out-String | Remove-EmptyLines } }
 }
 
 Function New-ZabbixSession {
@@ -137,81 +137,80 @@ Function New-ZabbixSession {
 	#>
     
 	[CmdletBinding()]
-    [Alias("Connect-Zabbix","czab")]
+	[Alias('Connect-Zabbix', 'czab')]
 	Param (
-        [Parameter(Mandatory=$True)][string]$IPAddress,
-		[Parameter(Mandatory=$True)][PSCredential]$PSCredential,
-		[Parameter(Mandatory=$False)]$URLCustomPath="zabbix",
-        [Switch]$useSSL,
+		[Parameter(Mandatory = $True)][string]$IPAddress,
+		[Parameter(Mandatory = $True)][PSCredential]$PSCredential,
+		[Parameter(Mandatory = $False)]$URLCustomPath = 'zabbix',
+		[Switch]$useSSL,
 		[switch]$noSSL
-    )
+	)
     
 	# if (!$psboundparameters.count) {Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines; return}
 
 	$Body = @{
-	    jsonrpc = "2.0"
-	    method = "user.login"
-	    params = @{
-		    user = $PSCredential.UserName
-		    password = $PSCredential.GetNetworkCredential().Password
-	    }
-	    id = 1
-	    auth = $null
-    }
+		jsonrpc = '2.0'
+		method  = 'user.login'
+		params  = @{
+			username = $PSCredential.UserName
+			password = $PSCredential.GetNetworkCredential().Password
+		}
+		id      = 1
+	}
 
-    $BodyJSON = ConvertTo-Json $Body
-	write-verbose $BodyJSON
-	if ($PSVersionTable.PSEdition -ne "core") {
-		if (!(test-connection $IPAddress -Quiet -Count 1)) {write-host "$IPAddress is not available.`n" -f red; return}
+	$BodyJSON = ConvertTo-Json $Body
+	Write-Verbose $BodyJSON
+	if ($PSVersionTable.PSEdition -ne 'core') {
+		if (!(Test-Connection $IPAddress -Quiet -Count 1)) { Write-Host "$IPAddress is not available.`n" -f red; return }
 	}
     
 	if ($noSSL) {
-		write-warning "You're going to connect via insecure HTTP protocol. Consider to use HTTPS."
-		$Protocol="http"
+		Write-Warning "You're going to connect via insecure HTTP protocol. Consider to use HTTPS."
+		$Protocol = 'http'
 	}
 	elseif ($useSSL) {
-		$Protocol="https"
+		$Protocol = 'https'
 	}	
 	else {
-		$Protocol="https"
+		$Protocol = 'https'
 	}
 	
-    # $URL = $Protocol+"://$IPAddress/zabbix"
-    $URL = $Protocol+"://$IPAddress/$URLCustomPath"
-    try {
+	# $URL = $Protocol+"://$IPAddress/zabbix"
+	$URL = $Protocol + "://$IPAddress/$URLCustomPath"
+	try {
 		if (!$global:zabSession -or !$global:zabSession.session) {
-		$global:zabSession=Invoke-RestMethod ("$URL/api_jsonrpc.php") -ContentType "application/json" -Body $BodyJSON -Method Post |
-			Select-Object jsonrpc,@{Name="session";Expression={$_.Result}},id,@{Name="URL";Expression={$URL}}
-	   }
-    }
-    catch {
-		# [void]::$_
-		if ($_.exception -match "Unable to connect to the remote server") {write-host "`nNot connected! ERROR: $_`n" -f red; write-verbose $_.exception; return}
-		else { 
-			write-host "`nSeems SSL certificate is self signed. Trying with no SSL validation..." -f yellow
-			if (($PSVersionTable.PSEdition -eq "core") -and !($PSDefaultParameterValues.keys -eq "Invoke-RestMethod:SkipCertificateCheck")) {$PSDefaultParameterValues.Add("Invoke-RestMethod:SkipCertificateCheck",$true)}
-			else {
-				write-host "`nWARNING: `nNo SSL validation setting in Windows Powershell is session wide.`nAs a result in this powershell session Invoke-Webrequest and Invoke-RestMethod may not work with regular websites: ex. iwr google.com`nUse new Powershell session for this purpose.`n" -f yellow
-				[System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-			}
-			$global:zabSession=Invoke-RestMethod ("$URL/api_jsonrpc.php") -ContentType "application/json" -Body $BodyJSON -Method Post |
-				Select-Object jsonrpc,@{Name="session";Expression={$_.Result}},id,@{Name="URL";Expression={$URL}}
+			$global:zabSession = Invoke-RestMethod ("$URL/api_jsonrpc.php") -ContentType 'application/json' -Body $BodyJSON -Method Post |
+				Select-Object jsonrpc, @{Name = 'session'; Expression = { $_.Result } }, id, @{Name = 'URL'; Expression = { $URL } }
 		}
-    } 
+	}
+	catch {
+		# [void]::$_
+		if ($_.exception -match 'Unable to connect to the remote server') { Write-Host "`nNot connected! ERROR: $_`n" -f red; Write-Verbose $_.exception; return }
+		else { 
+			Write-Host "`nSeems SSL certificate is self signed. Trying with no SSL validation..." -f yellow
+			if (($PSVersionTable.PSEdition -eq 'core') -and !($PSDefaultParameterValues.keys -eq 'Invoke-RestMethod:SkipCertificateCheck')) { $PSDefaultParameterValues.Add('Invoke-RestMethod:SkipCertificateCheck', $true) }
+			else {
+				Write-Host "`nWARNING: `nNo SSL validation setting in Windows Powershell is session wide.`nAs a result in this powershell session Invoke-Webrequest and Invoke-RestMethod may not work with regular websites: ex. iwr google.com`nUse new Powershell session for this purpose.`n" -f yellow
+				[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+			}
+			$global:zabSession = Invoke-RestMethod ("$URL/api_jsonrpc.php") -ContentType 'application/json' -Body $BodyJSON -Method Post |
+				Select-Object jsonrpc, @{Name = 'session'; Expression = { $_.Result } }, id, @{Name = 'URL'; Expression = { $URL } }
+		}
+	} 
 	
-    if ($zabSession.session) {
-		$global:zabSessionParams = [ordered]@{jsonrpc=$zabSession.jsonrpc;session=$zabSession.session;id=$zabSession.id;url=$zabSession.URL}
-		write-host "`nConnected to $IPAddress." -f green
-        write-host "Zabbix Server version: " -f green -nonewline
-        Get-ZabbixVersion
-        ""
-		write-host 'Usage: Get-ZabbixHelp -list' -f yellow
-		write-host 'Usage: Get-ZabbixHelp -alias' -f yellow
-        ""
+	if ($zabSession.session) {
+		$global:zabSessionParams = [ordered]@{jsonrpc = $zabSession.jsonrpc; session = $zabSession.session; id = $zabSession.id; url = $zabSession.URL }
+		Write-Host "`nConnected to $IPAddress." -f green
+		Write-Host 'Zabbix Server version: ' -f green -NoNewline
+		Get-ZabbixVersion
+		''
+		Write-Host 'Usage: Get-ZabbixHelp -list' -f yellow
+		Write-Host 'Usage: Get-ZabbixHelp -alias' -f yellow
+		''
 	} 
 	else {
-		write-host "`nERROR: Not connected. Try again." -f red; $zabsession
-		if ($PSCredential.UserName -match "@|\\") {write-warning "`nYou have used domain user name format $($PSCredential.UserName). `nThis is not always supported in Zabbix configuration. Please ask your Zabbix admin for help.`n`n"}
+		Write-Host "`nERROR: Not connected. Try again." -f red; $zabsession
+		if ($PSCredential.UserName -match '@|\\') { Write-Warning "`nYou have used domain user name format $($PSCredential.UserName). `nThis is not always supported in Zabbix configuration. Please ask your Zabbix admin for help.`n`n" }
 	}
 }
 
@@ -230,19 +229,19 @@ Function Get-ZabbixSession {
 	#>
 	
 	[CmdletBinding()]
-    [Alias("Get-ZabbixConnection","gzconn","gzsess")]
-    param ()
+	[Alias('Get-ZabbixConnection', 'gzconn', 'gzsess')]
+	param ()
 	
-    if (!($global:zabSession -and $global:zabSessionParams)) {
-        write-host "`nDisconnected form Zabbix Server!`n" -f red; return
-    }
-    elseif ($global:zabSession -and $global:zabSessionParams -and !($ZabbixVersion=Get-ZabbixVersion)) {
-		write-host "`nZabbix session params are OK (use -verbose for details). Check whether Zabbix Server is online. In case of certificate error try new powershell session.`n" -f red; write-verbose "$($zabSession | select *)"; return	
+	if (!($global:zabSession -and $global:zabSessionParams)) {
+		Write-Host "`nDisconnected form Zabbix Server!`n" -f red; return
 	}
-	elseif ($global:zabSession -and $global:zabSessionParams -and ($ZabbixVersion=Get-ZabbixVersion)) {
-		$zabSession | select *, @{n="ZabbixVer";e={$ZabbixVersion}}
-    }
-	else {write-host "`nDisconnected form Zabbix Server!`n" -f red; return}
+	elseif ($global:zabSession -and $global:zabSessionParams -and !($ZabbixVersion = Get-ZabbixVersion)) {
+		Write-Host "`nZabbix session params are OK (use -verbose for details). Check whether Zabbix Server is online. In case of certificate error try new powershell session.`n" -f red; Write-Verbose "$($zabSession | Select-Object *)"; return	
+	}
+	elseif ($global:zabSession -and $global:zabSessionParams -and ($ZabbixVersion = Get-ZabbixVersion)) {
+		$zabSession | Select-Object *, @{n = 'ZabbixVer'; e = { $ZabbixVersion } }
+	}
+	else { Write-Host "`nDisconnected form Zabbix Server!`n" -f red; return }
 }
 
 Function Remove-ZabbixSession {
@@ -260,38 +259,38 @@ Function Remove-ZabbixSession {
 	#>
 	
 	[CmdletBinding()]
-    [Alias("Disconnect-Zabbix","rzsess","dzsess")]
+	[Alias('Disconnect-Zabbix', 'rzsess', 'dzsess')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 
 	# if (!$psboundparameters.count -and !$global:zabSessionParams) {Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines; return}
-	if (!$psboundparameters.count -and !$global:zabSessionParams) {Write-Host "`nDisconnected from Zabbix Server!`n" -f red; return}
+	if (!$psboundparameters.count -and !$global:zabSessionParams) { Write-Host "`nDisconnected from Zabbix Server!`n" -f red; return }
 
 	if (Get-ZabbixSession) {
 		$Body = @{
-			method = "user.logout"
+			method  = 'user.logout'
 			jsonrpc = $jsonrpc
-			params = @{}
-			id = $id
-			auth = $session
+			params  = @{}
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result | out-null} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result | Out-Null } else { $a.error }
 		
-		$global:zabSession = ""
-		$global:zabSessionParams = ""
+		$global:zabSession = ''
+		$global:zabSessionParams = ''
 		
 		if (!(Get-ZabbixVersion)) {}
 	}
-	else {Get-ZabbixSession}
+	else { Get-ZabbixSession }
 }
 
 Function Get-ZabbixVersion {
@@ -309,32 +308,32 @@ Function Get-ZabbixVersion {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gzver")]
+	[Alias('gzver')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$params=@(),
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$params = @(),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
-	if (!($global:zabSession -or $global:zabSessionParams)) {write-host "`nDisconnected from Zabbix Server!`n" -f red; return}
+	if (!($global:zabSession -or $global:zabSessionParams)) { Write-Host "`nDisconnected from Zabbix Server!`n" -f red; return }
 	else {
 		$Body = @{
-			method = "apiinfo.version"
+			method  = 'apiinfo.version'
 			jsonrpc = $jsonrpc
-			id = $id
-			params = $params
+			id      = $id
+			params  = $params
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {return $a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Body $BodyJSON -Method Post
+			if ($a.result) { return $a.result } else { $a.error }
 		}
-		catch {Write-Host "`nERROR: $_." -f red}
+		catch { Write-Host "`nERROR: $_." -f red }
 	}
 }
 
@@ -420,99 +419,99 @@ Function Get-ZabbixHost {
 	#>
 	
 	[CmdletBinding()]
-	[Alias("gzhst")]
+	[Alias('gzhst')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)]$HostName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HttpTestID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$SortBy="name",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)]$HostName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$HttpTestID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$SortBy = 'name',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 		# if (!$psboundparameters.count -and !$global:zabSessionParams) {Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines; return}
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "host.get"
-			params = @{
-				output = "extend"
-				selectGroups = @(
-					"groupid",
-					"name"
+			method  = 'host.get'
+			params  = @{
+				output                = 'extend'
+				selectGroups          = @(
+					'groupid',
+					'name'
 				)
 				selectParentTemplates = @(
-					"templateid",
-					"name"
+					'templateid',
+					'name'
 				)
-				selectInterfaces = @(
-					"interfaceid",
-					"ip",
-					"port"
+				selectInterfaces      = @(
+					'interfaceid',
+					'ip',
+					'port'
 				)
-				selectHttpTests = @(
-					"httptestid",
-					"name",
-					"steps"
+				selectHttpTests       = @(
+					'httptestid',
+					'name',
+					'steps'
 				)
-				selectTriggers = @(
-					"triggerid",
-					"description"
+				selectTriggers        = @(
+					'triggerid',
+					'description'
 				)
-				selectApplications = @(
-					"applicationid"
-					"name"
+				selectApplications    = @(
+					'applicationid'
+					'name'
 				)
-				selectGraphs = @(
-					"graphid"
-					"name"
+				selectGraphs          = @(
+					'graphid'
+					'name'
 				)
-				selectMacros = @(
-					"hostmacroid"
-					"macro"
-					"value"
+				selectMacros          = @(
+					'hostmacroid'
+					'macro'
+					'value'
 				)
-				selectScreens = @(
-					"screenid"
-					"name"
+				selectScreens         = @(
+					'screenid'
+					'name'
 				)
-				selectInventory = @(
-					"name"
-					"type"
-					"os"
+				selectInventory       = @(
+					'name'
+					'type'
+					'os'
 				)
-				hostids = $HostID
-				groupids = $GroupID
-				httptestid = $HttpTestID
-				filter = @{
+				hostids               = $HostID
+				groupids              = $GroupID
+				httptestid            = $HttpTestID
+				filter                = @{
 					host = $HostName
 				}
-				sortfield = $SortBy
+				sortfield             = $SortBy
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -591,106 +590,106 @@ Function Set-ZabbixHost {
 		Link(replace existing) new templates to multiple hosts, according config of the other host
 	#>	 
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("szhst")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('szhst')]
 	Param (
-        [Alias("host")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostName,
+		[Alias('host')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostName,
 		# Visible name of the host. Default: host property value.
-		[Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostVisibleName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$GroupID,
-        [Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$groups,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$interfaceID,
-        [Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$interfaces,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$TemplateID,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$parentTemplates,
+		[Alias('name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostVisibleName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$GroupID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$groups,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$interfaceID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$interfaces,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$TemplateID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$parentTemplates,
 		# [Alias("parentTemplates")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$templates,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$templates,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)]$Inventory,
-		[Alias("description")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostDescription,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$templates,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)]$Inventory,
+		[Alias('description')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostDescription,
 		# Host inventory population mode: Possible values are: -1 - disabled; 0 - (default) manual; 1 - automatic.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$InventoryMode,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$InventoryMode,
 		# IPMI authentication algorithm: Possible values are: -1 - (default) default; 0 - none; 1 - MD2; 2 - MD5; 4 - straight; 5 - OEM; 6 - RMCP+
-		[Alias("ipmi_authtype")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$IpmiAuthtype,
-		[Alias("ipmi_username")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$IpmiUsername,
-		[Alias("ipmi_password")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$IpmiPassword,
+		[Alias('ipmi_authtype')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$IpmiAuthtype,
+		[Alias('ipmi_username')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$IpmiUsername,
+		[Alias('ipmi_password')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$IpmiPassword,
 		# IPMI privilege level: Possible values are: 1 - callback; 2 - (default) user; 3 - operator; 4 - admin; 5 - OEM.
-		[Alias("ipmi_privilege")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$IpmiPrivilege,
+		[Alias('ipmi_privilege')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$IpmiPrivilege,
 		# [array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$HttpTestID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$HttpTestID,
 		# Status and function of the host: Possible values are: 0 - (default) monitored host; 1 - unmonitored host
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$ProxyHostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$ProxyHostID,
 		[switch]$removeTemplates,
 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
-		if ($TemplateID -eq 0) {$TemplateID=""}
+		if ($TemplateID -eq 0) { $TemplateID = '' }
 
 		# if ($TemplateID.count -gt 9) {write-host "`nOnly up to 5 templates are allowed." -f red -b yellow; return}
-		for ($i=0; $i -lt $TemplateID.length; $i++) {[array]$tmpl+=$(@{templateid = $($TemplateID[$i])})}
-		for ($i=0; $i -lt $GroupID.length; $i++) {[array]$grp+=$(@{groupid = $($GroupID[$i])})}
-		for ($i=0; $i -lt $interfaceID.length; $i++) {[array]$ifc+=$(@{interfaceid = $($interfaceID[$i])})}
+		for ($i = 0; $i -lt $TemplateID.length; $i++) { [array]$tmpl += $(@{templateid = $($TemplateID[$i]) }) }
+		for ($i = 0; $i -lt $GroupID.length; $i++) { [array]$grp += $(@{groupid = $($GroupID[$i]) }) }
+		for ($i = 0; $i -lt $interfaceID.length; $i++) { [array]$ifc += $(@{interfaceid = $($interfaceID[$i]) }) }
 		
 		$Body = @{
-			method = "host.update"
-			params = @{
-				hostid = $HostID
-				status = $status
-				host = $HostName
-				name = $HostVisibleName
-				ipmi_authtype = $IpmiAuthtype
-				ipmi_username = $IpmiUsername
-				ipmi_password = $IpmiPassword
+			method  = 'host.update'
+			params  = @{
+				hostid         = $HostID
+				status         = $status
+				host           = $HostName
+				name           = $HostVisibleName
+				ipmi_authtype  = $IpmiAuthtype
+				ipmi_username  = $IpmiUsername
+				ipmi_password  = $IpmiPassword
 				ipmi_privilege = $IpmiPrivilege
-				description = $HostDescription
+				description    = $HostDescription
 				inventory_mode = $InventoryMode
-				proxy_hostid = $ProxyHostID
+				proxy_hostid   = $ProxyHostID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if (!$TemplateID -and $removeTemplates) {$Body.params.templates_clear=$parentTemplates | select templateid}
-		if ($TemplateID -and $removeTemplates) {$Body.params.templates_clear=$tmpl | ?{$_}}
-		if ($TemplateID -and !$removeTemplates) {$Body.params.templates=$tmpl | ?{$_}}
+		if (!$TemplateID -and $removeTemplates) { $Body.params.templates_clear = @( $parentTemplates | Select-Object templateid ) }
+		if ($TemplateID -and $removeTemplates) { $Body.params.templates_clear = @( $tmpl | Where-Object { $_ } ) }
+		if ($TemplateID -and !$removeTemplates) { $Body.params.templates = @( $tmpl | Where-Object { $_ } ) }
 		# if (!($TemplateID -and $removeTemplates)) {$Body.params.parenttemplates=$parentTemplates}
-		if ($GroupID) {$Body.params.groups=$grp} else {$Body.params.groups=$groups}
-		if ($interfaceID) {$Body.params.interfaces=$ifc} else {$Body.params.interfaces=($interfaces)}
+		if ($GroupID) { $Body.params.groups = @( $grp ) } else { $Body.params.groups = @( $groups ) }
+		if ($interfaceID) { $Body.params.interfaces = $ifc } else { $Body.params.interfaces = ($interfaces) }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if (!$removeTemplates) {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
 		}
 		elseif ($removeTemplates -and !$TemplateID) {
 			if ([bool]$WhatIfPreference.IsPresent) {}
-			if ($PSCmdlet.ShouldProcess((($parentTemplates).name -join ", "),"Unlink and clear templates from the host")) {  
-				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-				if ($a.result) {$a.result} else {$a.error}
+			if ($PSCmdlet.ShouldProcess((($parentTemplates).name -join ', '), 'Unlink and clear templates from the host')) {  
+				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+				if ($a.result) { $a.result } else { $a.error }
 			}
 		}
 		elseif ($removeTemplates -and $TemplateID) {
 			if ([bool]$WhatIfPreference.IsPresent) {}
-			if ($PSCmdlet.ShouldProcess(($parentTemplates | ? templateid -match (($tmpl).templateid -join "|")).name,"Unlink and clear templates")) {  
-				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-				if ($a.result) {$a.result} else {$a.error}
+			if ($PSCmdlet.ShouldProcess(($parentTemplates | Where-Object templateid -Match (($tmpl).templateid -join '|')).name, 'Unlink and clear templates')) {  
+				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+				if ($a.result) { $a.result } else { $a.error }
 			}
 		}
 		
@@ -753,79 +752,80 @@ Function New-ZabbixHost {
 	#>
 	
 	[CmdletBinding()]
-	[Alias("nzhst")]
+	[Alias('nzhst')]
 	Param (
-        [Parameter(Mandatory=$True)][string]$HostName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][string]$IP,
+		[Parameter(Mandatory = $True)][string]$HostName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][string]$IP,
 		[string]$DNSName,
 		[Switch]$MonitorByDNSName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Port = 10050,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][string]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$groups,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$ProxyHostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$templates,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$interfaces,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$parentTemplates,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Port = 10050,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][string]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$groups,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$ProxyHostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$templates,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$interfaces,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$parentTemplates,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URL = ($global:zabSessionParams.url)
+	)
 
-    process {
+	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 		# if (!$psboundparameters.count -and !$global:zabSessionParams) {Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines; return}
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		Switch ($MonitorByDNSName.IsPresent) {
-			$False {$ByDNSName = 1} # = ByIP
-			$True {$ByDNSName = 0} # = ByDomainName
+			$False { $ByDNSName = 1 } # = ByIP
+			$True { $ByDNSName = 0 } # = ByDomainName
 		}
 		
-		for ($i=0; $i -lt $TemplateID.length; $i++) {[array]$tmpl+=$(@{templateid = $($TemplateID[$i])})}
-		for ($i=0; $i -lt $GroupID.length; $i++) {[array]$grp+=$(@{groupid = $($GroupID[$i])})}
+		for ($i = 0; $i -lt $TemplateID.length; $i++) { [array]$tmpl += $(@{templateid = $($TemplateID[$i]) }) }
+		for ($i = 0; $i -lt $GroupID.length; $i++) { [array]$grp += $(@{groupid = $($GroupID[$i]) }) }
 		
 		$Body = @{
-			method = "host.create"
-			params = @{
-				host = $HostName
-				interfaces = @{
-					type = 1
-					main = 1
+			method  = 'host.create'
+			params  = @{
+				host         = $HostName
+				interfaces   = @{
+					type  = 1
+					main  = 1
 					useip = $ByDNSName
-					ip = $IP
-					dns = $DNSName
-					port = $Port
+					ip    = $IP
+					dns   = $DNSName
+					port  = $Port
 				}
-				status = $Status
+				status       = $Status
 				proxy_hostid = $ProxyHostID
 			}
 			
 			jsonrpc = $jsonrpc
-			auth = $session
-			id = $id
+			
+			id      = $id
 		}
 
-		if ($GroupID) {$Body.params.groups=$grp} elseif ($groups) {$Body.params.groups=$groups}
-		if ($TemplateID -and ($TemplateID -ne 0)) {$Body.params.templates=$tmpl} elseif ($parentTemplates) {$Body.params.templates=$parentTemplates | select templateid}
+		if ($GroupID) { $Body.params.groups = $grp } elseif ($groups) { $Body.params.groups = $groups }
+		if ($TemplateID -and ($TemplateID -ne 0)) { $Body.params.templates = @( $tmpl ) } elseif ($parentTemplates) { $Body.params.templates = @( $parentTemplates | Select-Object templateid ) }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		if ($a.result) {
 			$a.result
 			if ($psboundparameters.interfaces) {
-				write-host "Replacing the IP address in cloned interfaces..." -f green
-				Get-ZabbixHost -HostName $HostName | Get-ZabbixHostInterface | %{Set-ZabbixHostInterface -InterfaceID $_.interfaceid -IP $IP -Port $_.port -HostID $_.hostid -main $_.main}
+				Write-Host 'Replacing the IP address in cloned interfaces...' -f green
+				Get-ZabbixHost -HostName $HostName | Get-ZabbixHostInterface | ForEach-Object { Set-ZabbixHostInterface -InterfaceID $_.interfaceid -IP $IP -Port $_.port -HostID $_.hostid -main $_.main }
 			}
-		} else {$a.error}
+		}
+		else { $a.error }
 	}
 }
 
@@ -863,46 +863,46 @@ Function Remove-ZabbixHost {
 		Will delete ALL hosts from Zabbix 
 	#>
 	
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("Delete-ZabbixHost","rzhst","dzhst")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('Delete-ZabbixHost', 'rzhst', 'dzhst')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Name,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
-    process {
+	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "host.delete"
-			params = @($HostID)
+			method  = 'host.delete'
+			params  = @($HostID)
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Name,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Name, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
- }
+}
 
- Function Copy-ZabbixHost {
+Function Copy-ZabbixHost {
 	<# 
 	.Synopsis
 		Copy/clone host
@@ -937,65 +937,66 @@ Function Remove-ZabbixHost {
 	#>
 	
 	[CmdletBinding()]
-	[Alias("Clone-ZabbixHost","czhst")]
+	[Alias('Clone-ZabbixHost', 'czhst')]
 	Param (
-        [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$false)][string]$HostName,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$HostID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][string]$IP,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Port = 10050,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$interfaces,
-		[Alias("parentTemplates")][Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$templates,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$status,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$groups,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][string]$GroupID,
-        [Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$httpTests,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][int]$ProxyHostID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $false)][string]$HostName,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][string]$IP,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Port = 10050,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$interfaces,
+		[Alias('parentTemplates')][Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$templates,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$status,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$groups,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][string]$GroupID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$httpTests,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][int]$ProxyHostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "host.create"
-			params = @{
-				host = $HostName
+			method  = 'host.create'
+			params  = @{
+				host       = $HostName
 				# interfaces = $interfaces
-				interfaces = (Get-ZabbixHostInterface -HostID $hostid | select * -ExcludeProperty hostid,interfaceid,bulk)
-				templates = ($templates | select templateid)
-				groups = ($groups | select groupid)
+				interfaces = (Get-ZabbixHostInterface -HostID $hostid | Select-Object * -ExcludeProperty hostid, interfaceid, bulk)
+				templates  = ($templates | Select-Object templateid)
+				groups     = ($groups | Select-Object groupid)
 				# proxy_hostid = $ProxyHostID
-				status = $Status
+				status     = $Status
 			}
 			
 			jsonrpc = $jsonrpc
-			auth = $session
-			id = $id
+			
+			id      = $id
 		}
 
 		# if ($IP) {$Body.params.interfaces = }
-		if ($httpTests) {$Body.params.httptests = ($httpTests | select httptestid)}
-		if ($ProxyHostID) {$Body.params.proxy_hostid = $ProxyHostID}
+		if ($httpTests) { $Body.params.httptests = ($httpTests | Select-Object httptestid) }
+		if ($ProxyHostID) { $Body.params.proxy_hostid = $ProxyHostID }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		#$a.result.hostids
 		if ($a.result) {
 			$a.result
-				write-verbose " --> Going to replace the IP address in cloned interfaces..."
-				Get-ZabbixHost -HostName $HostName | Get-ZabbixHostInterface | Set-ZabbixHostInterface -IP $IP
-		} else {$a.error}
+			Write-Verbose ' --> Going to replace the IP address in cloned interfaces...'
+			Get-ZabbixHost -HostName $HostName | Get-ZabbixHostInterface | Set-ZabbixHostInterface -IP $IP
+		}
+		else { $a.error }
 	}
 }
 
@@ -1036,59 +1037,60 @@ Function Get-ZabbixTemplate {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gzt")]
+	[Alias('gzt')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$hostids,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$parentTemplates,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$hostids,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$parentTemplates,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
    
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "template.get"
-			params = @{
-				output = "extend"
-				selectHosts = "extend"
-				selectTemplates = "extend"
-				selectParentTemplates = "extend"
-				selectGroups = "extend"
-				selectHttpTests = "extend"
-				selectItems = "extend"
-				selectTriggers = "extend"
-				selectApplications = "extend"
-				selectMacros = "extend"
-				selectScreens = "extend"
-				filter = @{
+			method  = 'template.get'
+			params  = @{
+				output                = 'extend'
+				selectHosts           = 'extend'
+				selectTemplates       = 'extend'
+				selectParentTemplates = 'extend'
+				selectGroups          = 'extend'
+				selectHttpTests       = 'extend'
+				selectItems           = 'extend'
+				selectTriggers        = 'extend'
+				selectApplications    = 'extend'
+				selectMacros          = 'extend'
+				selectScreens         = 'extend'
+				filter                = @{
 					host = $TemplateName
 				}
 				# templateids = $TemplateID
-				hostids = $HostID
+				hostids               = $HostID
 			}
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -1123,65 +1125,65 @@ Function New-ZabbixTemplate {
 	#>
     
 	[CmdletBinding()]
-	[Alias("nzt")]
+	[Alias('nzt')]
 	Param (
-		[Alias("host")][Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][string]$TemplateHostName,
+		[Alias('host')][Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][string]$TemplateHostName,
 		# [Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$TemplateVisibleName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$TemplateDescription,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$HostID,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$groups,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$templates,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$hosts,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$parentTemplates,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$screens,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$applications,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$triggers,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$httpTests,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$TemplateDescription,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$HostID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$groups,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$templates,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$hosts,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$parentTemplates,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$screens,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$applications,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$triggers,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$httpTests,
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$macros,
 		# [switch]$AddToDefaultTemplateGroup,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
-		write-verbose ("groups: " + $groups.length)
-		write-verbose ("hosts:  " + $hosts.length)
-		write-verbose ("templates:  " + $templates.length)
+		Write-Verbose ('groups: ' + $groups.length)
+		Write-Verbose ('hosts:  ' + $hosts.length)
+		Write-Verbose ('templates:  ' + $templates.length)
 
-		if (!$GroupID -and !$groups) {$GroupID=1} 
+		if (!$GroupID -and !$groups) { $GroupID = 1 } 
 
-		for ($i=0; $i -lt $GroupID.length; $i++) {[array]$grp+=$(@{groupid = $($GroupID[$i])})}
-		for ($i=0; $i -lt $HostID.length; $i++) {[array]$hst+=$(@{hostid = $($HostID[$i])})}
-		for ($i=0; $i -lt $TemplateID.length; $i++) {[array]$tmpl+=$(@{templateid = $($TemplateID[$i])})}
+		for ($i = 0; $i -lt $GroupID.length; $i++) { [array]$grp += $(@{groupid = $($GroupID[$i]) }) }
+		for ($i = 0; $i -lt $HostID.length; $i++) { [array]$hst += $(@{hostid = $($HostID[$i]) }) }
+		for ($i = 0; $i -lt $TemplateID.length; $i++) { [array]$tmpl += $(@{templateid = $($TemplateID[$i]) }) }
 		# for ($i=0; $i -lt $macros.length; $i++) {[array]$mcr+=$(@{macroid = $($macros[$i])})}
 		
 		$Body = @{
-			method = "template.create"
-			params = @{
-				host = $TemplateHostName
+			method  = 'template.create'
+			params  = @{
+				host        = $TemplateHostName
 				# name = $TemplateVisibleName
 				description = $TemplateDescription
-				groups = if ($GroupID) {@($grp)} else {$groups}
+				groups      = if ($GroupID) { @($grp) } else { $groups }
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if ($HostID) {$Body.params.hosts=@($hst)} elseif ($hosts) {$Body.params.hosts=$hosts | select hostid}
-		if ($TemplateID) {$Body.params.templates=@($tmpl)} elseif ($parentTemplates) {$Body.params.templates=$parentTemplates | select templateid}
+		if ($HostID) { $Body.params.hosts = @($hst) } elseif ($hosts) { $Body.params.hosts = $hosts | Select-Object hostid }
+		if ($TemplateID) { $Body.params.templates = @($tmpl) } elseif ($parentTemplates) { $Body.params.templates = $parentTemplates | Select-Object templateid }
 		# if ($parentTemplates) {$Body.params.parentTemplates=$parentTemplates | select tmplateid}
 		# if ($screens) {$Body.params.screens=$screens}
 		# if ($applications) {$Body.params.applications=$applications}
@@ -1189,11 +1191,11 @@ Function New-ZabbixTemplate {
 		# if ($triggers) {$Body.params.httpTests=$triggers}
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		#$a.result | Select-Object Name,TemplateID,@{Name="HostsMembers";Expression={$_.hosts.hostid}}
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -1233,63 +1235,63 @@ Function Set-ZabbixTemplate {
 	#>
     
 	[CmdletBinding()]
-	[Alias("szt")]
+	[Alias('szt')]
 	Param (
-		[Alias("host")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName)][string]$TemplateHostName,
-		[Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName)][string]$TemplateVisibleName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName)][string]$TemplateDescription,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$GroupsID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$TemplatesID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostsID,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$groups,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$templates,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$hosts,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Alias('host')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName)][string]$TemplateHostName,
+		[Alias('name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName)][string]$TemplateVisibleName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName)][string]$TemplateDescription,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$GroupsID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$TemplatesID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$HostsID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$groups,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$templates,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$hosts,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
-		write-verbose ("groups: " + $groups.length)
-		write-verbose ("hosts:  " + $hosts.length)
-		write-verbose ("templates:  " + $templates.length)
+		Write-Verbose ('groups: ' + $groups.length)
+		Write-Verbose ('hosts:  ' + $hosts.length)
+		Write-Verbose ('templates:  ' + $templates.length)
 
-		for ($i=0; $i -lt $groupsID.length; $i++) {[array]$grp+=$(@{groupid = $($groupsID[$i])})}
-		for ($i=0; $i -lt $hostsID.length; $i++) {[array]$hst+=$(@{hostid = $($hostsID[$i])})}
-		for ($i=0; $i -lt $templatesID.length; $i++) {[array]$tmpl+=$(@{templateid = $($templatesID[$i])})}
+		for ($i = 0; $i -lt $groupsID.length; $i++) { [array]$grp += $(@{groupid = $($groupsID[$i]) }) }
+		for ($i = 0; $i -lt $hostsID.length; $i++) { [array]$hst += $(@{hostid = $($hostsID[$i]) }) }
+		for ($i = 0; $i -lt $templatesID.length; $i++) { [array]$tmpl += $(@{templateid = $($templatesID[$i]) }) }
 
 		$Body = @{
-			method = "template.update"
-			params = @{
-				host = $TemplateHostName
-				templateid = $TemplateID
-				name = $TemplateVisibleName
+			method  = 'template.update'
+			params  = @{
+				host        = $TemplateHostName
+				templateid  = $TemplateID
+				name        = $TemplateVisibleName
 				description = $TemplateDescription
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if ($groupsID) {$Body.params.groups=@($grp)} else {if ($groups) {$Body.params.groups=$groups}}
-		if ($hostsID) {$Body.params.hosts=@($hst)} else {if ($hosts) {$Body.params.hosts=$hosts}}
-		if ($templatesID) {$Body.params.templates=@($tmpl)} else {if ($templates) {$Body.params.templates=$templates} }
+		if ($groupsID) { $Body.params.groups = @($grp) } else { if ($groups) { $Body.params.groups = $groups } }
+		if ($hostsID) { $Body.params.hosts = @($hst) } else { if ($hosts) { $Body.params.hosts = $hosts } }
+		if ($templatesID) { $Body.params.templates = @($tmpl) } else { if ($templates) { $Body.params.templates = $templates } }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -1307,45 +1309,45 @@ Function Remove-ZabbixTemplate {
 		Remove templates
 	#>
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzt","dzt","Delete-ZabbixTemplate")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzt', 'dzt', 'Delete-ZabbixTemplate')]
 	Param (
-        [Alias("Name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Alias('Name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "template.delete"
-			params = @($TemplateID)
+			method  = 'template.delete'
+			params  = @($TemplateID)
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($TemplateName,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($TemplateName, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
 		#$a.result | Select-Object Name,TemplateID,@{Name="HostsMembers";Expression={$_.hosts.hostid}}
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -1380,55 +1382,56 @@ Function Get-ZabbixHostGroup {
 	#>
 
 	[CmdletBinding()]
-	[Alias("gzhg","Get-ZabbixGroup")]
+	[Alias('gzhg', 'Get-ZabbixGroup')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)]$GroupName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)]$GroupID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)]$GroupName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "hostgroup.get"
-			params = @{
-				output = "extend"
-				selectHosts = @(
-					"hostid",
-					"host"
+			method  = 'hostgroup.get'
+			params  = @{
+				output          = 'extend'
+				selectHosts     = @(
+					'hostid',
+					'host'
 				)
-				selectTemplates =  @(
-					"templateid",
-					"name"
+				selectTemplates = @(
+					'templateid',
+					'name'
 				)
-				filter = @{
+				filter          = @{
 					name = $GroupName
 				}
-				groupids = $GroupID
+				groupids        = $GroupID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -1449,45 +1452,46 @@ Function Set-ZabbixHostGroup {
 	#>
     
 	[CmdletBinding()]
-	[Alias("szhg","Set-ZabbixGroup")]
+	[Alias('szhg', 'Set-ZabbixGroup')]
 	Param (
-        [Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$GroupName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$GroupID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Alias('name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$GroupName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "hostgroup.update"
-			params = @{
+			method  = 'hostgroup.update'
+			params  = @{
 				groupid = $GroupID
-				name = $GroupName
+				name    = $GroupName
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -1508,39 +1512,39 @@ Function New-ZabbixHostGroup {
 	#>
     
 	[CmdletBinding()]
-	[Alias("nzhg")]
+	[Alias('nzhg')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Name,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "hostgroup.create"
-			params = @{	
+			method  = 'hostgroup.create'
+			params  = @{	
 				name = $Name
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -1562,43 +1566,43 @@ Function Remove-ZabbixHostGroup {
 		Remove host group (case sensitive)
 	#>
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzhg")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzhg')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$GroupID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "hostgroup.delete"
-			params = @($GroupID)	
+			method  = 'hostgroup.delete'
+			params  = @($GroupID)	
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Name,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Name, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -1635,58 +1639,58 @@ Function Set-ZabbixHostGroupRemoveHosts {
 		1.Remove hosts and templates from the host group 2.Validate the change
 	#>
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("szhgrh")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('szhgrh')]
 	Param (
-        [Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$GroupName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$TemplateID,
-		[Alias("host")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$HostName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Alias('name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$GroupName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$TemplateID,
+		[Alias('host')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$HostName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "hostgroup.massremove"
-			params = @{
+			method  = 'hostgroup.massremove'
+			params  = @{
 				groupids = @($GroupID)
 				# hostids = @($HostID)
 				# templateids = @($TemplateID)
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if ($HostID) {$Body.params.hostids=@($HostID)}
-		if ($TemplateID) {$Body.params.templateids=@($TemplateID)}
+		if ($HostID) { $Body.params.hostids = @($HostID) }
+		if ($TemplateID) { $Body.params.templateids = @($TemplateID) }
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
 			if ([bool]$WhatIfPreference.IsPresent) {}
 
-			if ($PSCmdlet.ShouldProcess((@($HostID)+@($hostName)+(@($TemplateID))),"Delete")) {  
-				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-				if ($a.result) {$a.result} else {$a.error}
+			if ($PSCmdlet.ShouldProcess((@($HostID) + @($hostName) + (@($TemplateID))), 'Delete')) {  
+				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+				if ($a.result) { $a.result } else { $a.error }
 			}
 		}
 		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -1713,51 +1717,52 @@ Function Set-ZabbixHostGroupAddHosts {
 	#>
     
 	[CmdletBinding()]
-	[Alias("szhgah")]
+	[Alias('szhgah')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "hostgroup.massadd"
-			params = @{
+			method  = 'hostgroup.massadd'
+			params  = @{
 				groups = @($GroupID)
 				# hosts = @($HostID)
 				# templates = @($TemplateID)
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
-		if ($HostID) {$Body.params.hosts=@($HostID)}
-		if ($TemplateID) {$Body.params.templates=@($TemplateID)}
+		if ($HostID) { $Body.params.hosts = @($HostID) }
+		if ($TemplateID) { $Body.params.templates = @($TemplateID) }
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -1811,50 +1816,51 @@ Function Get-ZabbixMaintenance {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gzm")]
+	[Alias('gzm')]
 	Param (
-        $MaintenanceName,
-        $MaintenanceID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		$MaintenanceName,
+		$MaintenanceID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "maintenance.get"
-			params = @{
-				output = "extend"
-				selectGroups = "extend"
-				selectHosts = "extend"
-				selectTimeperiods = "extend"
-				filter = @{
+			method  = 'maintenance.get'
+			params  = @{
+				output            = 'extend'
+				selectGroups      = 'extend'
+				selectHosts       = 'extend'
+				selectTimeperiods = 'extend'
+				filter            = @{
 					name = $MaintenanceName
 				}
-				maintenanceids = $MaintenanceID
+				maintenanceids    = $MaintenanceID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -1881,46 +1887,46 @@ Function Remove-ZabbixMaintenance {
 		Remove single maintenance by name
 	#>
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzm")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzm')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$Name,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$MaintenanceID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$MaintenanceID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
      
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "maintenance.delete"
-			params = @($MaintenanceID)
+			method  = 'maintenance.delete'
+			params  = @($MaintenanceID)
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Name,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Name, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
- }
+}
 
 Function New-ZabbixMaintenance {
 	<# 
@@ -1961,141 +1967,140 @@ Function New-ZabbixMaintenance {
 	#>
 
 	[CmdletBinding()]
-	[Alias("nzm")]
+	[Alias('nzm')]
 	Param (
-        [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$False)][string]$MaintenanceName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$MaintenanceDescription,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $False)][string]$MaintenanceName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$MaintenanceDescription,
 		# Type of maintenance.  Possible values:  0 - (default) with data collection;  1 - without data collection. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$MaintenanceType,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$MaintenanceType,
 		# epoch time
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$False)]$ActiveSince,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $False)]$ActiveSince,
 		# epoch time
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$False)]$ActiveTill,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $False)]$ActiveTill,
 		# Possible values: 0 - (default) one time only;  2 - daily;  3 - weekly;  4 - monthly. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimePeriodType=0,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimePeriodType = 0,
 		# Time of day when the maintenance starts in seconds.  Required for daily, weekly and monthly periods. (epoch time)
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodStartTime,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodStartTime,
 		# Date when the maintenance period must come into effect.  Required only for one time periods. Default: current date. (epoch time)
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)]$TimeperiodStartDate,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)]$TimeperiodStartDate,
 		# Duration of the maintenance period in seconds. Default: 3600 (epoch time)
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodPeriod,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodPeriod,
 		# For daily and weekly periods every defines day or week intervals at which the maintenance must come into effect. 
 		# For monthly periods every defines the week of the month when the maintenance must come into effect. 
 		# Possible values:  1 - first week;  2 - second week;  3 - third week;  4 - fourth week;  5 - last week.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodEvery,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodEvery,
 		# Day of the month when the maintenance must come into effect
 		# Required only for monthly time periods
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodDay,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodDay,
 		# Days of the week when the maintenance must come into effect
 		# Days are stored in binary form with each bit representing the corresponding day. For example, 4 equals 100 in binary and means, that maintenance will be enabled on Wednesday
 		# Used for weekly and monthly time periods. Required only for weekly time periods
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodDayOfWeek,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodDayOfWeek,
 		# Months when the maintenance must come into effect
 		# Months are stored in binary form with each bit representing the corresponding month. For example, 5 equals 101 in binary and means, that maintenance will be enabled in January and March
 		# Required only for monthly time periods
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodMonth,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url),
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string[]]$Tags
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodMonth,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string[]]$Tags
 		
-    )
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
-		if (!($GroupID -or $HostID)) {write-host "`nYou need to provide GroupID or HostID as parameter`n" -f red; return}
+		if (!($GroupID -or $HostID)) { Write-Host "`nYou need to provide GroupID or HostID as parameter`n" -f red; return }
 		
 		if ($GroupID) {
 			$Body = @{
-				method = "maintenance.create"
-				params = @{
-					name = $MaintenanceName
-					description = $MaintenanceDescription
-					active_since = $ActiveSince
-					active_till = $ActiveTill
+				method  = 'maintenance.create'
+				params  = @{
+					name             = $MaintenanceName
+					description      = $MaintenanceDescription
+					active_since     = $ActiveSince
+					active_till      = $ActiveTill
 					maintenance_type = $MaintenanceType
-					timeperiods = @(
+					timeperiods      = @(
 						@{
 							timeperiod_type = $TimeperiodType
-							start_date = $TimeperiodStartDate
-							period = $TimeperiodPeriod
+							start_date      = $TimeperiodStartDate
+							period          = $TimeperiodPeriod
 							
-							start_time = $TimeperiodStartTime
-							month = $TimeperiodMonth
-							dayofweek = $TimeperiodDayOfWeek
-							day = $TimeperiodDay
+							start_time      = $TimeperiodStartTime
+							month           = $TimeperiodMonth
+							dayofweek       = $TimeperiodDayOfWeek
+							day             = $TimeperiodDay
 						}
 					)
-					groupids = @($GroupID)
+					groupids         = @($GroupID)
 				}
 				
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		if ($HostID) {
 			$Body = @{
-				method = "maintenance.create"
-				params = @{
-					name = $MaintenanceName
-					description = $MaintenanceDescription
-					active_since = $ActiveSince
-					active_till = $ActiveTill
+				method  = 'maintenance.create'
+				params  = @{
+					name             = $MaintenanceName
+					description      = $MaintenanceDescription
+					active_since     = $ActiveSince
+					active_till      = $ActiveTill
 					maintenance_type = $MaintenanceType
-					timeperiods = @(
+					timeperiods      = @(
 						@{
 							timeperiod_type = $TimeperiodType
-							start_date = $TimeperiodStartDate
-							period = $TimeperiodPeriod
+							start_date      = $TimeperiodStartDate
+							period          = $TimeperiodPeriod
 							
-							every = $TimeperiodEvery
-							start_time = $TimeperiodStartTime
-							month = $TimeperiodMonth
-							dayofweek = $TimeperiodDayOfWeek
-							day = $TimeperiodDay
+							every           = $TimeperiodEvery
+							start_time      = $TimeperiodStartTime
+							month           = $TimeperiodMonth
+							dayofweek       = $TimeperiodDayOfWeek
+							day             = $TimeperiodDay
 						}
 					)
-					hostids = @($HostID)
+					hostids          = @($HostID)
 				}
 				
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 
-		if($Tags){
-			$formattedTags = Foreach ($tag in $Tags)
-            {
-                $split = $tag.split(':')
-                @{
-                    tag      = $split[0]
-                    operator = 0
-                    value    = $split[-1]
-                }
+		if ($Tags) {
+			$formattedTags = Foreach ($tag in $Tags) {
+				$split = $tag.split(':')
+				@{
+					tag      = $split[0]
+					operator = 0
+					value    = $split[-1]
+				}
 			}
 			$Body.params.tags = $formattedTags
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body -Depth 4
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
- }
+}
 
- Function Set-ZabbixMaintenance {
+Function Set-ZabbixMaintenance {
 	<# 
 	.Synopsis
 		Set/update maintenance settings
@@ -2129,118 +2134,118 @@ Function New-ZabbixMaintenance {
 	#>
 
 	[CmdletBinding()]
-	[Alias("szm")]
+	[Alias('szm')]
 	Param (
-		[Alias("name")][Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$MaintenanceName,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$MaintenanceID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostID,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$groups,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$hosts,
-		[Parameter(DontShow,Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$timeperiods,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$MaintenanceDescription,
+		[Alias('name')][Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$MaintenanceName,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$MaintenanceID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$HostID,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$groups,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$hosts,
+		[Parameter(DontShow, Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$timeperiods,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$MaintenanceDescription,
 		#Type of maintenance.  Possible values:  0 - (default) with data collection;  1 - without data collection. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$MaintenanceType,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$MaintenanceType,
 		#epoch time
-		[Alias("active_since")][Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)]$ActiveSince,
+		[Alias('active_since')][Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)]$ActiveSince,
 		#epoch time
-		[Alias("active_till")][Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)]$ActiveTill,
+		[Alias('active_till')][Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)]$ActiveTill,
 		#epoch time
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$TimeperiodPeriod,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$TimeperiodPeriod,
 		#Possible values: 0 - (default) one time only;  2 - daily;  3 - weekly;  4 - monthly. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$TimePeriodType=0,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$TimePeriodType = 0,
 		#Time of day when the maintenance starts in seconds.  Required for daily, weekly and monthly periods. (epoch time)
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$TimeperiodStartTime,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$TimeperiodStartTime,
 		#Date when the maintenance period must come into effect.  Required only for one time periods. Default: current date. (epoch time)
 		# [Alias("timeperiods.start_date")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True,ValueFromRemainingArguments=$true)]$TimeperiodStartDate,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)]$TimeperiodStartDate,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)]$TimeperiodStartDate,
 		#For daily and weekly periods every defines day or week intervals at which the maintenance must come into effect. 
 		#For monthly periods every defines the week of the month when the maintenance must come into effect. 
 		#Possible values:  1 - first week;  2 - second week;  3 - third week;  4 - fourth week;  5 - last week.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$TimeperiodEvery,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$TimeperiodEvery,
 		# Day of the month when the maintenance must come into effect
 		# Required only for monthly time periods
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodDay,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodDay,
 		# Days of the week when the maintenance must come into effect
 		# Days are stored in binary form with each bit representing the corresponding day. For example, 4 equals 100 in binary and means, that maintenance will be enabled on Wednesday
 		# Used for weekly and monthly time periods. Required only for weekly time periods
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodDayOfWeek,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodDayOfWeek,
 		# Months when the maintenance must come into effect
 		# Months are stored in binary form with each bit representing the corresponding month. For example, 5 equals 101 in binary and means, that maintenance will be enabled in January and March
 		# Required only for monthly time periods
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][int]$TimeperiodMonth,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][int]$TimeperiodMonth,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		# for ($i=0; $i -lt $GroupID.length; $i++) {[array]$grp+=$(@{GroupID = $($TemplateID[$i])})}
 		# for ($i=0; $i -lt $HostID.length; $i++) {[array]$hst+=$(@{HostID = $($HostID[$i])})}
 		# for ($i=0; $i -lt $TemplateID.length; $i++) {[array]$tmpl+=$(@{templateid = $($TemplateID[$i])})}
 		
-		if ($hosts -and !$HostID) {$HostID=($hosts).hostid}
-		if ($groups -and !$GroupID) {$GroupID=($groups).groupid}
-		if ($timeperiods -and !$TimeperiodType) {$TimeperiodType=($timeperiods).timeperiod_type}
-		if ($timeperiods -and !$TimeperiodStartDate) {$TimeperiodStartDate=($timeperiods).start_date}
-		if ($timeperiods -and !$TimeperiodStartTime) {$TimeperiodStartTime=($timeperiods).start_time}
-		if ($timeperiods -and !$TimeperiodPeriod) {$TimeperiodPeriod=($timeperiods).period}
-		if ($timeperiods -and !$TimeperiodMonth) {$TimeperiodMonth=($timeperiods).month}
-		if ($timeperiods -and !$TimeperiodDayOfWeek) {$TimeperiodDayOfWeek=($timeperiods).dayofweek}
-		if ($timeperiods -and !$TimeperiodDay) {$TimeperiodDay=($timeperiods).day}
-		if ($timeperiods -and !$TimeperiodEvery) {$TimeperiodEvery=($timeperiods).every}
+		if ($hosts -and !$HostID) { $HostID = ($hosts).hostid }
+		if ($groups -and !$GroupID) { $GroupID = ($groups).groupid }
+		if ($timeperiods -and !$TimeperiodType) { $TimeperiodType = ($timeperiods).timeperiod_type }
+		if ($timeperiods -and !$TimeperiodStartDate) { $TimeperiodStartDate = ($timeperiods).start_date }
+		if ($timeperiods -and !$TimeperiodStartTime) { $TimeperiodStartTime = ($timeperiods).start_time }
+		if ($timeperiods -and !$TimeperiodPeriod) { $TimeperiodPeriod = ($timeperiods).period }
+		if ($timeperiods -and !$TimeperiodMonth) { $TimeperiodMonth = ($timeperiods).month }
+		if ($timeperiods -and !$TimeperiodDayOfWeek) { $TimeperiodDayOfWeek = ($timeperiods).dayofweek }
+		if ($timeperiods -and !$TimeperiodDay) { $TimeperiodDay = ($timeperiods).day }
+		if ($timeperiods -and !$TimeperiodEvery) { $TimeperiodEvery = ($timeperiods).every }
 
 		$Body = @{
-			method = "maintenance.update"
-			params = @{
-				name = $MaintenanceName
-				maintenanceid = $MaintenanceID
-				description = $MaintenanceDescription
-				active_since = $ActiveSince
-				active_till = $ActiveTill
+			method  = 'maintenance.update'
+			params  = @{
+				name             = $MaintenanceName
+				maintenanceid    = $MaintenanceID
+				description      = $MaintenanceDescription
+				active_since     = $ActiveSince
+				active_till      = $ActiveTill
 				maintenance_type = $MaintenanceType
-				timeperiods = @(
+				timeperiods      = @(
 					@{
 						timeperiod_type = $TimeperiodType
-						start_date = $TimeperiodStartDate
-						period = $TimeperiodPeriod
+						start_date      = $TimeperiodStartDate
+						period          = $TimeperiodPeriod
 						
-						every = $TimeperiodEvery
-						start_time = $TimeperiodStartTime
-						month = $TimeperiodMonth
-						dayofweek = $TimeperiodDayOfWeek
-						day = $TimeperiodDay
+						every           = $TimeperiodEvery
+						start_time      = $TimeperiodStartTime
+						month           = $TimeperiodMonth
+						dayofweek       = $TimeperiodDayOfWeek
+						day             = $TimeperiodDay
 					}
 				)
-				groupids = $GroupID
+				groupids         = $GroupID
 				# groups = $GroupID
-				hostids = $HostID
+				hostids          = $HostID
 				# timeperiods = $timeperiods
 				# timeperiods = @($timep)
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body -Depth 4
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
- }
+}
 
- Function Get-ZabbixHttpTest {
+Function Get-ZabbixHttpTest {
 	<# 
 	.Synopsis
 		Get web/http test
@@ -2308,83 +2313,84 @@ Function New-ZabbixMaintenance {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gzhttp")]
+	[Alias('gzhttp')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HttpTestID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HttpTestID,
 		$HttpTestName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		if (!$hostid) {
 			$Body = @{
-				method = "httptest.get"
-				params = @{
-					output = "extend"
-					selectHosts = "extend"
-					selectSteps = "extend"
+				method      = 'httptest.get'
+				params      = @{
+					output      = 'extend'
+					selectHosts = 'extend'
+					selectSteps = 'extend'
 					httptestids = $HttpTestID
 					templateids = $TemplateID
-					filter = @{
+					filter      = @{
 						name = $HttpTestName
 					}
 				}
 				
 				selectHosts = @(
-					"hostid",
-					"name"
+					'hostid',
+					'name'
 				)
 				
-				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				jsonrpc     = $jsonrpc
+				id          = $id
+				auth        = $session
 			}
 		}
 		if ($HostID) {
 			$Body = @{
-				method = "httptest.get"
-				params = @{
-					output = "extend"
-					selectHosts = "extend"
-					selectSteps = "extend"
+				method      = 'httptest.get'
+				params      = @{
+					output      = 'extend'
+					selectHosts = 'extend'
+					selectSteps = 'extend'
 					httptestids = $HttpTestID
-					hostids = @($hostid)
-					filter = @{
+					hostids     = @($hostid)
+					filter      = @{
 						name = $HttpTestName
 					}
 				}
 				
 				selectHosts = @(
-					"hostid",
-					"name"
+					'hostid',
+					'name'
 				)
 				
-				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				jsonrpc     = $jsonrpc
+				id          = $id
+				auth        = $session
 			}
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -2406,86 +2412,86 @@ Function New-ZabbixHttpTest {
 	#>
     
 	[CmdletBinding()]
-	[Alias("nzhttp")]
+	[Alias('nzhttp')]
 	Param (
-        $HttpTestID,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$HostID,
-        $HttpTestStepRequired,
-		[Parameter(ValueFromPipelineByPropertyName=$true)][array]$StatusCodes=200,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$Timeout=15,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$delay,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$retries,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$status,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$Steps,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$applicationid,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$TemplateID,
+		$HttpTestID,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$HostID,
+		$HttpTestStepRequired,
+		[Parameter(ValueFromPipelineByPropertyName = $true)][array]$StatusCodes = 200,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$Timeout = 15,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$delay,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$retries,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$status,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$Steps,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$applicationid,
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$TemplateID,
 		$HttpTestStepName,
-		[Parameter(Mandatory=$True)]$HttpTestName,
+		[Parameter(Mandatory = $True)]$HttpTestName,
 		#[Parameter(Mandatory=$True)]$HttpTestStepURL,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 
 	process {
 	
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		if ($steps) {
 			$Body = @{
-				method = "httptest.create"
-				params = @{
-					name = $HttpTestName
-					hostid = $HostID
-					templateid = $TemplateID
+				method  = 'httptest.create'
+				params  = @{
+					name          = $HttpTestName
+					hostid        = $HostID
+					templateid    = $TemplateID
 					applicationid = $applicationid
-					status = $status
-					steps = $steps
+					status        = $status
+					steps         = $steps
 				}
 				
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		else {
 			$Body = @{
-				method = "httptest.create"
-				params = @{
-					name = $HttpTestName
-					hostid = $HostID
-					templateid = $TemplateID
+				method  = 'httptest.create'
+				params  = @{
+					name          = $HttpTestName
+					hostid        = $HostID
+					templateid    = $TemplateID
 					applicationid = $applicationid
-					status = $status
-					delay = $delay
-					retries = $retries
-					steps = @(
+					status        = $status
+					delay         = $delay
+					retries       = $retries
+					steps         = @(
 						@{
-							name = $HttpTestStepName
-							url = $HttpTestStepURL
-							status_codes = $StatusCodes
-							required = $HttpTestStepRequired
+							name             = $HttpTestStepName
+							url              = $HttpTestStepURL
+							status_codes     = $StatusCodes
+							required         = $HttpTestStepRequired
 							follow_redirects = 1
-							timeout = $Timeout
+							timeout          = $Timeout
 						}
 					) 
 				}
 				
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -2512,81 +2518,79 @@ Function Set-ZabbixHttpTest {
 	#>
 
 	[CmdletBinding()]
-	[Alias("szhttp")]
-    Param (
-        [Parameter(ValueFromPipelineByPropertyName=$true)]$HttpTestID,
-		[Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$HttpTestName,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$HttpTestStepURL,
+	[Alias('szhttp')]
+	Param (
+		[Parameter(ValueFromPipelineByPropertyName = $true)]$HttpTestID,
+		[Alias('name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$HttpTestName,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$HttpTestStepURL,
 		$HostID,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$HttpTestStepName,
-        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$HttpTestStepRequired,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$delay=60,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$retries=1,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$status,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)]$timeout=15,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$HttpTestStepName,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$HttpTestStepRequired,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$delay = 60,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$retries = 1,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$status,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]$timeout = 15,
 		[switch]$UpdateSteps,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
-		if ($UpdateSteps) 
-		{
+		if ($UpdateSteps) {
 			$Body = @{
-				method = "httptest.update"
-				params = @{
+				method  = 'httptest.update'
+				params  = @{
 					httptestid = $HttpTestID
-					status = $status
-					name = $HttpTestName
-					steps = @(
+					status     = $status
+					name       = $HttpTestName
+					steps      = @(
 						@{
-							name = $HttpTestStepName
-							url = $HttpTestStepURL
-							status_codes = 200
-							required = $HttpTestStepRequired
+							name             = $HttpTestStepName
+							url              = $HttpTestStepURL
+							status_codes     = 200
+							required         = $HttpTestStepRequired
 							follow_redirects = 1
-							timeout = $timeout
+							timeout          = $timeout
 						}
 					) 
 				}
 				
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
-		else 
-		{
+		else {
 			$Body = @{
-			method = "httptest.update"
-			params = @{
-				httptestid = $HttpTestID
-				status = $status
-				name = $HttpTestName
-				retries = $retries
-				delay = $delay
-			}
+				method  = 'httptest.update'
+				params  = @{
+					httptestid = $HttpTestID
+					status     = $status
+					name       = $HttpTestName
+					retries    = $retries
+					delay      = $delay
+				}
 			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 		}
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -2606,43 +2610,43 @@ Function Remove-ZabbixHttpTest {
 		Delete web/http tests 
 	#>
 
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzhttp")]
-    Param (
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][array]$HttpTestID,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzhttp')]
+	Param (
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][array]$HttpTestID,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "httptest.delete"
-			params = @($HttpTestID)
+			method  = 'httptest.delete'
+			params  = @($HttpTestID)
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Name,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Name, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -2696,133 +2700,133 @@ Function Export-ZabbixConfiguration {
 		Explore configuration as powershell objects, without retrieving information from the server
 	#>
 	[CmdletBinding()]
-	[Alias("Export-ZabbixConfig","ezconf")]
+	[Alias('Export-ZabbixConfig', 'ezconf')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$ScreenID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$MapID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$ScreenID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$MapID,
 		# Format XML or JSON
-		[string]$Format="xml",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[string]$Format = 'xml',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"	
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"	
 		
 		if ($HostID) {
 			$Body = @{
-			method = "configuration.export"
-			params = @{
-				options = @{
-					hosts = @($HostID)
+				method  = 'configuration.export'
+				params  = @{
+					options = @{
+						hosts = @($HostID)
+					}
+					format  = $format
 				}
-			format = $format
-			}
 			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 
 			$BodyJSON = ConvertTo-Json $Body -Depth 3
-			write-verbose $BodyJSON
+			Write-Verbose $BodyJSON
 			
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
 		}
 		elseif ($TemplateID) {
 			$Body = @{
-			method = "configuration.export"
-			params = @{
-				options = @{
-					templates = @($TemplateID)
+				method  = 'configuration.export'
+				params  = @{
+					options = @{
+						templates = @($TemplateID)
+					}
+					format  = $format
 				}
-			format = $format
-			}
 			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 
 			$BodyJSON = ConvertTo-Json $Body -Depth 3
-			write-verbose $BodyJSON
+			Write-Verbose $BodyJSON
 			
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
 		}
 		elseif ($GroupID) {
 			$Body = @{
-			method = "configuration.export"
-			params = @{
-				options = @{
-					groups = @($GroupID)
+				method  = 'configuration.export'
+				params  = @{
+					options = @{
+						groups = @($GroupID)
+					}
+					format  = $format
 				}
-			format = $format
-			}
 			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 
 			$BodyJSON = ConvertTo-Json $Body -Depth 3
-			write-verbose $BodyJSON
+			Write-Verbose $BodyJSON
 			
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
 		}
 		elseif ($ScreenID) {
 			$Body = @{
-			method = "configuration.export"
-			params = @{
-				options = @{
-					screens = @($ScreenID)
+				method  = 'configuration.export'
+				params  = @{
+					options = @{
+						screens = @($ScreenID)
+					}
+					format  = $format
 				}
-			format = $format
-			}
 			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 
 			$BodyJSON = ConvertTo-Json $Body -Depth 3
-			write-verbose $BodyJSON
+			Write-Verbose $BodyJSON
 			
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
 		}
 		elseif ($MapID) {
 			$Body = @{
-			method = "configuration.export"
-			params = @{
-				options = @{
-					maps = @($MapID)
+				method  = 'configuration.export'
+				params  = @{
+					options = @{
+						maps = @($MapID)
+					}
+					format  = $format
 				}
-			format = $format
-			}
 			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 
 			$BodyJSON = ConvertTo-Json $Body -Depth 3
-			write-verbose $BodyJSON
+			Write-Verbose $BodyJSON
 			
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
 		}
 	}
 }
@@ -2854,94 +2858,94 @@ function Import-ZabbixConfiguration {
 		Import hosts configuration
 	#>
 	[CmdletBinding()]
-	[Alias("Import-ZabbixConfig","izconf")]
+	[Alias('Import-ZabbixConfig', 'izconf')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][string]$Path,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$false)][string]$source,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][string]$Path,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $false)][string]$source,
 		# Format XML or JSON
-		[string]$Format="xml",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[string]$Format = 'xml',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	Process {
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"	
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"	
 		
 		if ($Path) {
-			if (Test-Path $Path) {$xmlFile = Get-Content $Path | out-string}
+			if (Test-Path $Path) { $xmlFile = Get-Content $Path | Out-String }
 			# if (Test-Path $Path) {$xmlFile = Get-Content $Path}
 			# if (Test-Path $Path) {[string]$xmlFile = Get-Content $Path}
 		}
-		elseif ($source) {$xmlFile = $source}
-		else {Write-Host "`nError: Wrong path!`n" -f red; return}
+		elseif ($source) { $xmlFile = $source }
+		else { Write-Host "`nError: Wrong path!`n" -f red; return }
 		
-		if (($xmlFile).count -ne 1) {Write-Host "`nBad xml file!`n" -f red; return}
+		if (($xmlFile).count -ne 1) { Write-Host "`nBad xml file!`n" -f red; return }
 		  
 		$Body = @{
-		method = "configuration.import"
-		params = @{
-			format = $format
-			rules = @{
-				groups = @{
-					createMissing = $true
+			method  = 'configuration.import'
+			params  = @{
+				format = $format
+				rules  = @{
+					groups          = @{
+						createMissing = $true
+					}
+					templateLinkage = @{
+						createMissing = $true
+					}
+					applications    = @{
+						createMissing = $true
+					}
+					hosts           = @{
+						createMissing  = $true
+						updateExisting = $true
+					}
+					items           = @{
+						createMissing  = $true
+						updateExisting = $true
+					}
+					discoveryRules  = @{
+						createMissing  = $true
+						updateExisting = $true
+					}
+					triggers        = @{
+						createMissing  = $true
+						updateExisting = $true
+					}
+					graphs          = @{
+						createMissing  = $true
+						updateExisting = $true
+					}
+					httptests       = @{
+						createMissing  = $true
+						updateExisting = $true
+					}
+					valueMaps       = @{
+						createMissing = $true
+					}
 				}
-				templateLinkage = @{
-					createMissing = $true
-				}
-				applications = @{
-					createMissing = $true
-				}
-				hosts = @{
-					createMissing = $true
-					updateExisting = $true
-				}
-				items = @{
-					createMissing = $true
-					updateExisting = $true
-				}
-				discoveryRules = @{
-					createMissing = $true
-					updateExisting = $true
-				}
-				triggers = @{
-					createMissing = $true
-					updateExisting = $true
-				}
-				graphs = @{
-					createMissing = $true
-					updateExisting = $true
-				}
-				httptests = @{
-					createMissing = $true
-					updateExisting = $true
-				}
-				valueMaps = @{
-					createMissing = $true
-				}
+				source = $xmlFile
 			}
-			source = $xmlFile
-		}
 		
-		jsonrpc = $jsonrpc
-		id = $id
-		auth = $session
+			jsonrpc = $jsonrpc
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		if ($a.result) {
 			$a.result
 			Write-Host "`nImport was successful`n" -f green
 		} 
-		else {$a.error}
+		else { $a.error }
 	}
 }
 
@@ -2986,59 +2990,60 @@ Function Get-ZabbixTrigger {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gztr")]
+	[Alias('gztr')]
 	Param (
 		[switch]$ExpandDescription,
 		[switch]$ExpandExpression,
-        [array]$TriggerID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[array]$TriggerID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "trigger.get"
-			params = @{
-				output = "extend"
-				selectFunctions = "extend"
-				selectLastEvent = "extend"
-				selectGroups = "extend"
-				selectHosts = "extend"
-				selectDependencies = "extend"
-				selectTags = "extend"
-				selectDiscoveryRule = "extend"
-				expandDescription = $ExpandDescription
-				expandExpression = $ExpandExpression
-				expandComment = $ExpandComment
-				triggerids = $TriggerID
-				templateids = $TemplateID
-				hostids = $HostID
+			method  = 'trigger.get'
+			params  = @{
+				output              = 'extend'
+				selectFunctions     = 'extend'
+				selectLastEvent     = 'extend'
+				selectGroups        = 'extend'
+				selectHosts         = 'extend'
+				selectDependencies  = 'extend'
+				selectTags          = 'extend'
+				selectDiscoveryRule = 'extend'
+				expandDescription   = $ExpandDescription
+				expandExpression    = $ExpandExpression
+				expandComment       = $ExpandComment
+				triggerids          = $TriggerID
+				templateids         = $TemplateID
+				hostids             = $HostID
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -3066,44 +3071,44 @@ Function Set-ZabbixTrigger {
 	#>
 
 	[CmdletBinding()]
-	[Alias("sztr")]
+	[Alias('sztr')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$TriggerID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$TriggerID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$status,
 		[switch]$ExpandDescription,
 		[switch]$ExpandExpression,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "trigger.update"
-			params = @{
+			method  = 'trigger.update'
+			params  = @{
 				triggerid = $TriggerID
-				status = $status
+				status    = $status
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -3130,53 +3135,53 @@ Function New-ZabbixTrigger {
 	#>
 
 	[CmdletBinding()]
-	[Alias("nztr")]
+	[Alias('nztr')]
 	Param (
-        # [Parameter(ValueFromPipelineByPropertyName=$true)]$TriggerID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$TriggerDescription,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$TriggerExpression,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$triggertags,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$dependencies,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		# [Parameter(ValueFromPipelineByPropertyName=$true)]$TriggerID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$TriggerDescription,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$TriggerExpression,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$triggertags,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$dependencies,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
-		write-verbose ("dependencies: " + $dependencies.length)
+		Write-Verbose ('dependencies: ' + $dependencies.length)
 
-		for ($i=0; $i -lt $dependencies.length; $i++) {[array]$depnds+=$(@{triggerid = $($dependencies[$i])})}
+		for ($i = 0; $i -lt $dependencies.length; $i++) { [array]$depnds += $(@{triggerid = $($dependencies[$i]) }) }
 
 		$Body = @{
-			method = "trigger.create"
-			params = @{
-				description = $TriggerDescription
-				expression = $TriggerExpression
+			method  = 'trigger.create'
+			params  = @{
+				description  = $TriggerDescription
+				expression   = $TriggerExpression
 				# triggerid = $TriggerID
-				status = $status
+				status       = $status
 				dependencies = @($depnds)
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -3253,71 +3258,72 @@ Function Get-ZabbixItem {
         Cassandra: Get-ZabbixItem -ItemName 'byte' -HostId (Get-ZabbixHost | ? name -match "cassandraNodes").hostid | select @{n="hostname";e={$_.hosts.name}},key_,@{e={(convertfrom-epoch $_.lastclock).addhours(+1)};n="Time"},@{n="prevvalue";e={[math]::round(($_.prevvalue/1gb),2)}},@{n="lastvalue";e={[math]::round(($_.lastvalue/1gb),2)}} | sort hostname | ft -a
 	#>
 	
-	[CmdLetBinding(DefaultParameterSetName="None")]
-	[Alias("gzi")]
+	[CmdLetBinding(DefaultParameterSetName = 'None')]
+	[Alias('gzi')]
 	Param (
-		[String]$SortBy="name",
+		[String]$SortBy = 'name',
 		[String]$ItemKey,
 		[String]$ItemName,
 		[string]$Description,
-		[Parameter(ParameterSetName="hostname",Mandatory=$False,ValueFromPipelineByPropertyName=$true)][String]$HostName,
-		[Parameter(ParameterSetName="hostid",Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostId,
-		[Parameter(ParameterSetName="hostid",Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-		[Parameter(ParameterSetName="hostid",Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TriggerID,
+		[Parameter(ParameterSetName = 'hostname', Mandatory = $False, ValueFromPipelineByPropertyName = $true)][String]$HostName,
+		[Parameter(ParameterSetName = 'hostid', Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostId,
+		[Parameter(ParameterSetName = 'hostid', Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(ParameterSetName = 'hostid', Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TriggerID,
 		[switch]$WebItems,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "item.get"
-			params = @{
-				output = "extend"
-				webitems=$WebItems
-				triggerids = $TriggerID
-				templateids = $TemplateID
-				hostids = @($HostID)
-				groupids = $GroupID
+			method  = 'item.get'
+			params  = @{
+				output             = 'extend'
+				webitems           = $WebItems
+				triggerids         = $TriggerID
+				templateids        = $TemplateID
+				hostids            = @($HostID)
+				groupids           = $GroupID
 				
-				selectInterfaces = "extend"
-				selectTriggers = "extend"
-				selectApplications = "extend"
-				selectHosts = @(
-					"hostid",
-					"name"
+				selectInterfaces   = 'extend'
+				selectTriggers     = 'extend'
+				selectApplications = 'extend'
+				selectHosts        = @(
+					'hostid',
+					'name'
 				)
-				sortfield = $sortby
+				sortfield          = $sortby
 				
-				search = @{
+				search             = @{
 					key_ = $ItemKey
 					name = $ItemName
 				}
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -3350,57 +3356,57 @@ Function Set-ZabbixItem {
 	#>
     
 	[CmdletBinding()]
-	[Alias("szi")]
+	[Alias('szi')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$applicationid,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$status,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$itemid,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$applicationid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$itemid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		if ($applicationid) {
 			$Body = @{
-			method = "item.update"
-			params = @{
-				itemid = $itemid
-				applications = $applicationid
-			}
+				method  = 'item.update'
+				params  = @{
+					itemid       = $itemid
+					applications = $applicationid
+				}
 
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 		}
 		else {
 			$Body = @{
-				method = "item.update"
-				params = @{
+				method  = 'item.update'
+				params  = @{
 					itemid = $itemid
 					status = $status
 				}
 
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -3419,62 +3425,62 @@ Function Remove-ZabbixItem {
 		Delete items from the host configuration
 	#>
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzi")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzi')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$applicationid,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$status,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$itemid,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$applicationid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$itemid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		if ($applicationid) {
 			$Body = @{
-			method = "item.delete"
-			params = @{
-				itemid = $itemid
-				applications = $applicationid
-			}
+				method  = 'item.delete'
+				params  = @{
+					itemid       = $itemid
+					applications = $applicationid
+				}
 
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+				jsonrpc = $jsonrpc
+				id      = $id
+				
 			}
 		}
 		else {
 			$Body = @{
-				method = "item.delete"
-				params = @{
+				method  = 'item.delete'
+				params  = @{
 					itemid = $itemid
 				}
 
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Name,"Delete")){  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Name, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -3509,65 +3515,66 @@ Function Get-ZabbixEvent {
     #>
 	
 	[cmdletbinding()]
-	[Alias("gze")]
+	[Alias('gze')]
 	Param (
 		# epoch time
 		$TimeFrom,
 		# epoch time
 		# Time until to display alerts. Default: till now. Time is in UTC/GMT
-		$TimeTill=(convertTo-epoch ((get-date).addhours(0)).ToUniversalTime()),
+		$TimeTill = (convertTo-epoch ((Get-Date).addhours(0)).ToUniversalTime()),
 		$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$EventID,
-		[array] $SortBy="clock",
-        # Possible values for trigger events: 0 - trigger; 1 - discovered host; 2 - discovered service; 3 - auto-registered host
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$source, 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$EventID,
+		[array] $SortBy = 'clock',
+		# Possible values for trigger events: 0 - trigger; 1 - discovered host; 2 - discovered service; 3 - auto-registered host
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$source, 
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "event.get"
-			params = @{
-				output = "extend"
-				select_acknowledges = "extend"
-				time_from = $timeFrom
-				time_till = $timeTill
-				sortorder = "desc"
-				select_alerts = "extend"
-				eventids = $EventID
-				selectHosts = @(
-					"hostid",
-					"name"
+			method  = 'event.get'
+			params  = @{
+				output              = 'extend'
+				select_acknowledges = 'extend'
+				time_from           = $timeFrom
+				time_till           = $timeTill
+				sortorder           = 'desc'
+				select_alerts       = 'extend'
+				eventids            = $EventID
+				selectHosts         = @(
+					'hostid',
+					'name'
 				)
-				sortfield = @($sortby)
-				filter = @{
+				sortfield           = @($sortby)
+				filter              = @{
 					hostids = $HostID
 				}
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -3585,43 +3592,43 @@ Function Set-ZabbixEvent {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("sze")]
+	[Alias('sze')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$EventID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$EventID,
 		$ackMessage,
 		$HostID,
-		[array] $SortBy="clock",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[array] $SortBy = 'clock',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "event.acknowledge"
-			params = @{
+			method  = 'event.acknowledge'
+			params  = @{
 				eventids = $EventID
-				message = $ackMessage
+				message  = $ackMessage
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -3664,59 +3671,60 @@ Function Get-ZabbixAlert {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("gzal")]
+	[Alias('gzal')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
 		#epoch time
 		#TimeFrom to display the alerts. Default: -5, from five hours ago. Time is in UTC/GMT"
-		$TimeFrom=(convertTo-epoch ((get-date).addhours(-5)).ToUniversalTime()),
+		$TimeFrom = (convertTo-epoch ((Get-Date).addhours(-5)).ToUniversalTime()),
 		#epoch time
 		#TimeTill to display the alerts. Default: till now. Time is in UTC/GMT"
-		$TimeTill=(convertTo-epoch ((get-date).addhours(0)).ToUniversalTime()),
-		[array] $SortBy="clock",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		$TimeTill = (convertTo-epoch ((Get-Date).addhours(0)).ToUniversalTime()),
+		[array] $SortBy = 'clock',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "alert.get"
-			params = @{
-				output = "extend"
-				time_from = $timeFrom
-				time_till = $timeTill
-				selectMediatypes = "extend"
-				selectUsers = "extend"
-				selectHosts = @(
-					"hostid",
-					"name"
+			method  = 'alert.get'
+			params  = @{
+				output           = 'extend'
+				time_from        = $timeFrom
+				time_till        = $timeTill
+				selectMediatypes = 'extend'
+				selectUsers      = 'extend'
+				selectHosts      = @(
+					'hostid',
+					'name'
 				)
-				hostids = $HostID
-				sortfield = @($sortby)
+				hostids          = $HostID
+				sortfield        = @($sortby)
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -3737,45 +3745,46 @@ Function Get-ZabbixAction {
 		Get-ZabbixAction  | ? name -match Prod | select name -ExpandProperty def_longdata	
 	#>
 	[cmdletbinding()]
-	[Alias("gzac")]
+	[Alias('gzac')]
 	Param (
-		[array] $SortBy="name",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[array] $SortBy = 'name',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "action.get"
-			params = @{
-				output = "extend"
-				selectOperations = "extend"
-				selectFilter = "extend"
-				sortfield = @($sortby)
+			method  = 'action.get'
+			params  = @{
+				output           = 'extend'
+				selectOperations = 'extend'
+				selectFilter     = 'extend'
+				sortfield        = @($sortby)
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -3792,42 +3801,42 @@ Function Set-ZabbixAction {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("szac")]
+	[Alias('szac')]
 	Param (
-		[array] $SortBy="name",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$ActionID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[array] $SortBy = 'name',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$ActionID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "action.update"
-			params = @{
+			method  = 'action.update'
+			params  = @{
 				actionid = $ActionID
-				status = $status
+				status   = $status
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -3857,58 +3866,59 @@ Function Get-ZabbixUser {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("gzu")]
+	[Alias('gzu')]
 	Param (
-		[array]$SortBy="alias",
-		[switch]$getAccess=$true,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$UserID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$MediaID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[array]$SortBy = 'alias',
+		[switch]$getAccess = $true,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$UserID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$MediaID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 	
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 		
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "user.get"
-			params = @{
-				output = "extend"
-				selectMedias = "extend"
-				selectMediatypes = "extend"
-				selectUsrgrps = "extend"
-				sortfield = @($sortby)
-				getAccess = $getAccess
-				userids = $UserID
-				mediaids = $MediaID
+			method  = 'user.get'
+			params  = @{
+				output           = 'extend'
+				selectMedias     = 'extend'
+				selectMediatypes = 'extend'
+				selectUsrgrps    = 'extend'
+				sortfield        = @($sortby)
+				getAccess        = $getAccess
+				userids          = $UserID
+				mediaids         = $MediaID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
 
 Function Remove-ZabbixUser { 
-    <#
+	<#
 	.Synopsis
 		Remove/Delete users
 	.Parameter UserID
@@ -3927,42 +3937,42 @@ Function Remove-ZabbixUser {
 		Delete users who don't have media
 	#>
 	
-	[cmdletbinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzu")]
+	[cmdletbinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzu')]
 	Param (
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][array]$UserID,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][array]$Alias,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][array]$UserID,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][array]$Alias,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "user.delete"
-			params = @($UserID)
+			method  = 'user.delete'
+			params  = @($UserID)
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Alias,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Alias, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -4039,141 +4049,141 @@ Function New-ZabbixUser {
 	#>	
 	
 	[cmdletbinding()]
-	[Alias("nzu")]
+	[Alias('nzu')]
 	Param (
 		# [switch]$getAccess=$true,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][string]$Alias,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][string]$Passwd,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserGroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Surname,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$usrgrpid,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][string]$Alias,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][string]$Passwd,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserGroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Surname,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$usrgrpid,
 		# Trigger severities to send notifications about. Severities are stored in binary form with each bit representing the corresponding severity. For example, 12 equals 1100 in binary and means, that notifications will be sent from triggers with severities warning and average. 
 		# Refer to the trigger object page for a list of supported trigger severities. Default: 63
-		[Alias("severity")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$UserMediaSeverity="63",
-		[Alias("period")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserMediaPeriod="1-7,00:00-24:00",
-		[Alias("sendto")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserMediaSendto,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$mediatypeid,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$usrgrps,
-		[Alias("rows_per_page")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$RowsPerPage,
+		[Alias('severity')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$UserMediaSeverity = '63',
+		[Alias('period')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserMediaPeriod = '1-7,00:00-24:00',
+		[Alias('sendto')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserMediaSendto,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$mediatypeid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$usrgrps,
+		[Alias('rows_per_page')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$RowsPerPage,
 		# Whether the media is enabled. Possible values: 0 - (default) enabled; 1 - disabled.
-		[Alias("active")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserMediaActive,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$medias,
+		[Alias('active')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserMediaActive,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$medias,
 		# Type of the user. Possible values: 1 - (default) Zabbix user; 2 - Zabbix admin; 3 - Zabbix super admin.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$Type,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$mediaTypes,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$Type,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$mediaTypes,
 		# Automatic refresh period. Accepts seconds and time unit with suffix. Default: 30s.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Refresh,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Refresh,
 		# Possible values: 0 - (default) auto-login disabled; 1 - auto-login enabled.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$Autologin,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$Autologin,
 		# User session life time. Accepts seconds and time unit with suffix. If set to 0s, the session will never expire. Default: 15m.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Autologout,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Autologout,
 		# User's theme. Possible values: default - (default) system default; blue-theme - Blue; dark-theme - Dark.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][ValidateSet("default","blue-theme","dark-theme")][string]$Theme,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][ValidateSet('default', 'blue-theme', 'dark-theme')][string]$Theme,
 		# URL of the page to redirect the user to after logging in.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserDefaultURL,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserDefaultURL,
 		
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
-		if ($Autologin -and $Autologout) {Write-Host "`nAutologin and Autologout options cannot be enabled together!`n" -f red; return}
+		if ($Autologin -and $Autologout) { Write-Host "`nAutologin and Autologout options cannot be enabled together!`n" -f red; return }
 		
 		if ($UserGroupID.length -gt 0) {
-			if ($UserGroupID[0] -notmatch "[a-z][A-Z]") { for ($i=0; $i -lt $UserGroupID.length; $i++) {[array]$usrgrp+=$(@{usrgrpid = $($UserGroupID[$i])})} }
-			else {$usrgrp=$UserGroupID}
+			if ($UserGroupID[0] -notmatch '[a-z][A-Z]') { for ($i = 0; $i -lt $UserGroupID.length; $i++) { [array]$usrgrp += $(@{usrgrpid = $($UserGroupID[$i]) }) } }
+			else { $usrgrp = $UserGroupID }
 		}
 
 		# for ($i=0; $i -lt $UserGroupID.length; $i++) {[array]$usrgrp+=$(@{usrgrpid = $($UserGroupID[$i])})}
 		# for ($i=0; $i -lt $medias.length; $i++) {$medias[$i].active=0}
 		
-		if ($UserMediaActive -and $medias) {for ($i=0; $i -lt $medias.length; $i++) {$medias[$i].active=$UserMediaActive}}
-		if ($UserMediaSendto -and $medias) {for ($i=0; $i -lt $medias.length; $i++) {$medias[$i].sendto=$UserMediaSendto}}
+		if ($UserMediaActive -and $medias) { for ($i = 0; $i -lt $medias.length; $i++) { $medias[$i].active = $UserMediaActive } }
+		if ($UserMediaSendto -and $medias) { for ($i = 0; $i -lt $medias.length; $i++) { $medias[$i].sendto = $UserMediaSendto } }
 		
-		if ($medias) {$medias=$medias | select * -ExcludeProperty mediaid,userid}
+		if ($medias) { $medias = $medias | Select-Object * -ExcludeProperty mediaid, userid }
 		
 		if (($UserMediaSendto -or $UserMediaActive) -and !$medias) {
 			$Body = @{
-				method = "user.create"
-				params = @{
-					name = $Name
-					surname = $Surname
-					alias = $Alias
-					passwd = $Passwd
-					url = $UserDefaultURL
+				method  = 'user.create'
+				params  = @{
+					name        = $Name
+					surname     = $Surname
+					alias       = $Alias
+					passwd      = $Passwd
+					url         = $UserDefaultURL
 					user_medias = @(
 						@{
 							mediatypeid = $mediatypeid
-							sendto = $UserMediaSendto
-							active = $UserMediaActive
-							severity = $UserMediaSeverity
-							period = $UserMediaPeriod
+							sendto      = $UserMediaSendto
+							active      = $UserMediaActive
+							severity    = $UserMediaSeverity
+							period      = $UserMediaPeriod
 						}
 					)
 				}
 				
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		elseif ($medias) {
 			$Body = @{
-				method = "user.create"
-				params = @{
-					name = $Name
-					surname = $Surname
-					alias = $Alias
-					passwd = $Passwd
-					url = $UserDefaultURL
+				method  = 'user.create'
+				params  = @{
+					name        = $Name
+					surname     = $Surname
+					alias       = $Alias
+					passwd      = $Passwd
+					url         = $UserDefaultURL
 					user_medias = @($medias)
 				}
 			
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		else {
 			$Body = @{
-				method = "user.create"
-				params = @{
-					name = $Name
+				method  = 'user.create'
+				params  = @{
+					name    = $Name
 					surname = $Surname
-					alias = $Alias
-					passwd = $Passwd
-					url = $UserDefaultURL
+					alias   = $Alias
+					passwd  = $Passwd
+					url     = $UserDefaultURL
 				}
 			
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 
-		if ($Type) {$Body.params.type=$Type}
-		if ($Autologin) {$Body.params.autologin=$Autologin}
-		if ($Autologout) {$Body.params.autologout=$Autologout}
-		if ($Theme) {$Body.params.theme=$Theme}
-		if ($Refresh) {$Body.params.refresh=$Refresh}
-		if ($RowsPerPage) {$Body.params.rows_per_page=$RowsPerPage}
-		if ($UserGroupID) {$Body.params.usrgrps=$usrgrp} else {$Body.params.usrgrps=@($usrgrps | select usrgrpid)}
+		if ($Type) { $Body.params.type = $Type }
+		if ($Autologin) { $Body.params.autologin = $Autologin }
+		if ($Autologout) { $Body.params.autologout = $Autologout }
+		if ($Theme) { $Body.params.theme = $Theme }
+		if ($Refresh) { $Body.params.refresh = $Refresh }
+		if ($RowsPerPage) { $Body.params.rows_per_page = $RowsPerPage }
+		if ($UserGroupID) { $Body.params.usrgrps = $usrgrp } else { $Body.params.usrgrps = @($usrgrps | Select-Object usrgrpid) }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -4249,60 +4259,60 @@ Function Set-ZabbixUser {
 	#>	
 	
 	[cmdletbinding()]
-	[Alias("szu")]
+	[Alias('szu')]
 	Param (
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][string]$UserID,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][string]$UserID,
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$usrgrpid,
-		[Alias("usrgrpid")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserGroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Alias,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Passwd,
+		[Alias('usrgrpid')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserGroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Alias,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Passwd,
 		#user types: 1:Zabbix User,2:Zabbix Admin,3:Zabbix Super Admin 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Type,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$usrgrps,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$medias,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$mediaid,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$mediatypeid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Type,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$usrgrps,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$medias,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$mediaid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$mediatypeid,
 
-		[Alias("user_media")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$Media,
+		[Alias('user_media')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$Media,
 		# Amount of object rows to show per page. Default: 50.
-		[Alias("rows_per_page")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$RowsPerPage,
+		[Alias('rows_per_page')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$RowsPerPage,
 		# Whether the media is enabled. Possible values: 0 - (default) enabled; 1 - disabled.
-		[Alias("active")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserMediaActive,
-		[Alias("sendto")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserMediaSendto,
+		[Alias('active')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserMediaActive,
+		[Alias('sendto')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserMediaSendto,
 		# Trigger severities to send notifications about. Severities are stored in binary form with each bit representing the corresponding severity. For example, 12 equals 1100 in binary and means, that notifications will be sent from triggers with severities warning and average. 
 		# Refer to the trigger object page for a list of supported trigger severities. Default: 63
-		[Alias("severity")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$UserMediaSeverity,
-		[Alias("period")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserMediaPeriod,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Surname,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$Autologin,
+		[Alias('severity')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$UserMediaSeverity,
+		[Alias('period')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserMediaPeriod,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Surname,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$Autologin,
 		# User session life time. Accepts seconds and time unit with suffix. If set to 0s, the session will never expire. Default: 15m.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Autologout,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Autologout,
 		# User's theme. Possible values: default - (default) system default; blue-theme - Blue; dark-theme - Dark.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][ValidateSet("default", "blue-theme", "dark-theme")][string]$Theme,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][ValidateSet('default', 'blue-theme', 'dark-theme')][string]$Theme,
 		# Automatic refresh period. Accepts seconds and time unit with suffix. Default: 30s.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Refresh,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Refresh,
 		# Language code of the user's language. Default: en_GB.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Lang,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Lang,
 		# URL of the page to redirect the user to after logging in.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserDefaultURL,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][regex]$matchMediatypeids,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserDefaultURL,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][regex]$matchMediatypeids,
 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
-		if ($Autologin -and $Autologout) {Write-Host "`nAutologin and Autologout options cannot be enabled together!`n" -f red; return}
+		if ($Autologin -and $Autologout) { Write-Host "`nAutologin and Autologout options cannot be enabled together!`n" -f red; return }
 		if (!($matchMediatypeids -or $mediatypeid) -and ($UserMediaActive -or $UserMediaSendto -or $UserMediaSeverity -or $UserMediaPeriod)) {
 			Write-Host "`n`nERROR: Missing parameters!`n`nFor single mediatypeid use -mediatypeid`nFor multiple mediatypeids use -matchMediatypeids" -f red
 			Write-Host "`nHelp: gzh user -p mediatypeid`n`n" -f cyan
@@ -4310,47 +4320,47 @@ Function Set-ZabbixUser {
 		}  
 
 		if ($UserGroupID.length -gt 0) {
-			if ($UserGroupID[0] -notmatch "[a-z][A-Z]") { for ($i=0; $i -lt $UserGroupID.length; $i++) {[array]$usrgrp+=$(@{usrgrpid = $($UserGroupID[$i])})} }
-			else {$usrgrp=$UserGroupID}
+			if ($UserGroupID[0] -notmatch '[a-z][A-Z]') { for ($i = 0; $i -lt $UserGroupID.length; $i++) { [array]$usrgrp += $(@{usrgrpid = $($UserGroupID[$i]) }) } }
+			else { $usrgrp = $UserGroupID }
 		}
 		
 		if ($matchMediatypeids) {
-			$ErrorActionPreference="SilentlyContinue"
-			if ($UserMediaActive) {for ($i=0; $i -lt $medias.length; $i++) {($medias[$i] | ? mediatypeid -match "$matchMediatypeids").active=$UserMediaActive}}
-			if ($UserMediaSendto) {for ($i=0; $i -lt $medias.length; $i++) {($medias[$i] | ? mediatypeid -match "$matchMediatypeids").sendto=$UserMediaSendto}}
-			if ($UserMediaSeverity) {for ($i=0; $i -lt $medias.length; $i++) {($medias[$i] | ? mediatypeid -match "$matchMediatypeids").severity=$UserMediaSeverity}}
-			if ($UserMediaPeriod) {for ($i=0; $i -lt $medias.length; $i++) {($medias[$i] | ? mediatypeid -match "$matchMediatypeids").period=$UserMediaPeriod}}
-			$ErrorActionPreference="Continue"
+			$ErrorActionPreference = 'SilentlyContinue'
+			if ($UserMediaActive) { for ($i = 0; $i -lt $medias.length; $i++) { ($medias[$i] | Where-Object mediatypeid -Match "$matchMediatypeids").active = $UserMediaActive } }
+			if ($UserMediaSendto) { for ($i = 0; $i -lt $medias.length; $i++) { ($medias[$i] | Where-Object mediatypeid -Match "$matchMediatypeids").sendto = $UserMediaSendto } }
+			if ($UserMediaSeverity) { for ($i = 0; $i -lt $medias.length; $i++) { ($medias[$i] | Where-Object mediatypeid -Match "$matchMediatypeids").severity = $UserMediaSeverity } }
+			if ($UserMediaPeriod) { for ($i = 0; $i -lt $medias.length; $i++) { ($medias[$i] | Where-Object mediatypeid -Match "$matchMediatypeids").period = $UserMediaPeriod } }
+			$ErrorActionPreference = 'Continue'
 		}
 		else {
-			if ($UserMediaActive -and $mediatypeid) {($medias | ? mediatypeid -eq $mediatypeid).active=$UserMediaActive}
-			if ($UserMediaSendto -and $mediatypeid) {($medias | ? mediatypeid -eq $mediatypeid).sendto=$UserMediaSendto}
-			if ($UserMediaSeverity -and $mediatypeid) {($medias | ? mediatypeid -eq $mediatypeid).severity=$UserMediaSeverity}
-			if ($UserMediaPeriod -and $mediatypeid) {($medias | ? mediatypeid -eq $mediatypeid).period=$UserMediaPeriod}
+			if ($UserMediaActive -and $mediatypeid) { ($medias | Where-Object mediatypeid -EQ $mediatypeid).active = $UserMediaActive }
+			if ($UserMediaSendto -and $mediatypeid) { ($medias | Where-Object mediatypeid -EQ $mediatypeid).sendto = $UserMediaSendto }
+			if ($UserMediaSeverity -and $mediatypeid) { ($medias | Where-Object mediatypeid -EQ $mediatypeid).severity = $UserMediaSeverity }
+			if ($UserMediaPeriod -and $mediatypeid) { ($medias | Where-Object mediatypeid -EQ $mediatypeid).period = $UserMediaPeriod }
 		}
 
-		if ($medias) {$medias=$medias | select * -ExcludeProperty mediaid,userid}
+		if ($medias) { $medias = $medias | Select-Object * -ExcludeProperty mediaid, userid }
 		
 		$Body = @{
-			method = "user.update"
-			params = @{
-				userid = $UserID
-				name = $Name
-				surname = $Surname
-				alias = $Alias
-				type = $Type
-				autologin = $Autologin
-				autologout = $Autologout
-				theme = $Theme
-				refresh = $Refresh
-				lang = $Lang
+			method  = 'user.update'
+			params  = @{
+				userid        = $UserID
+				name          = $Name
+				surname       = $Surname
+				alias         = $Alias
+				type          = $Type
+				autologin     = $Autologin
+				autologout    = $Autologout
+				theme         = $Theme
+				refresh       = $Refresh
+				lang          = $Lang
 				rows_per_page = $RowsPerPage
-				user_medias = @($medias)
+				user_medias   = @($medias)
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		# if ($Type) {$Body.params.type=$Type}
@@ -4360,17 +4370,17 @@ Function Set-ZabbixUser {
 		# if ($Refresh) {$Body.params.refresh=$Refresh}
 		# if ($RowsPerPage) {$Body.params.rows_per_page=$RowsPerPage}
 
-		if ($UserDefaultURL) {$Body.params.url=$UserDefaultURL}	
-		if ($Passwd) {$Body.params.passwd=$Passwd}
-		if ($UserGroupID -or $usrgrp) {$Body.params.usrgrps=$usrgrp} else {$Body.params.usrgrps=@($usrgrps | select usrgrpid)}
+		if ($UserDefaultURL) { $Body.params.url = $UserDefaultURL }	
+		if ($Passwd) { $Body.params.passwd = $Passwd }
+		if ($UserGroupID -or $usrgrp) { $Body.params.usrgrps = $usrgrp } else { $Body.params.usrgrps = @($usrgrps | Select-Object usrgrpid) }
 		
 		
 		
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -4396,50 +4406,51 @@ Function Get-ZabbixUserGroup {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("gzug")]
+	[Alias('gzug')]
 	Param (
-		[array]$SortBy="name",
+		[array]$SortBy = 'name',
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$UserGroupName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$userids,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$userids,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "usergroup.get"
-			params = @{
-				output = "extend"
-				selectUsers = "extend"
-				selectRights = "extend"
-				userids = $userids
-				status = $status
-				sortfield = @($sortby)
+			method  = 'usergroup.get'
+			params  = @{
+				output       = 'extend'
+				selectUsers  = 'extend'
+				selectRights = 'extend'
+				userids      = $userids
+				status       = $status
+				sortfield    = @($sortby)
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -4479,65 +4490,66 @@ Function New-ZabbixUserGroup {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("nzug")]
+	[Alias('nzug')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupName,
 		# Whether debug mode is enabled or disabled. Possible values are: 0 - (default) disabled; 1 - enabled.
-		[Alias("debug_mode")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupDebugMode,
+		[Alias('debug_mode')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupDebugMode,
 		# Frontend authentication method of the users in the group. Possible values: 0 - (default) use the system default authentication method; 1 - use internal authentication; 2 - disable access to the frontend.
-		[Alias("gui_access")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupGuiAccess,
+		[Alias('gui_access')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupGuiAccess,
 		# Whether the user group is enabled or disabled. Possible values are: 0 - (default) enabled; 1 - disabled.
-		[Alias("users_status")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupUsersStatus,
+		[Alias('users_status')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupUsersStatus,
 		# ID of the host group to add permission to.
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupAccessRightsHostGroupID,
 		# Access level to the host group. Possible values: 0 - access denied; 2 - read-only access; 3 - read-write access.
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupAccessRightsPermission,
-		[Alias("rights")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserGroupAccessRights,
+		[Alias('rights')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserGroupAccessRights,
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$rights,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$userids,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$users,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$userids,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$users,
 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "usergroup.create"
-			params = @{
-				name  = $UserGroupName
+			method  = 'usergroup.create'
+			params  = @{
+				name = $UserGroupName
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if ($UserGroupAccessRights) {$Body.params.rights=@(@($UserGroupAccessRights))}
-		if ($UserID) {$Body.params.userids=$UserID} elseif ($users) {$Body.params.userids=@($users.userid)}
-		if ($UserGroupGuiAccess) {$Body.params.gui_access=$UserGroupGuiAccess}
-		if ($UserGroupDebugMode) {$Body.params.debug_mode=$UserGroupDebugMode}
-		if ($UserGroupUsersStatus) {$Body.params.users_status=$UserGroupUsersStatus}
+		if ($UserGroupAccessRights) { $Body.params.rights = @(@($UserGroupAccessRights)) }
+		if ($UserID) { $Body.params.userids = $UserID } elseif ($users) { $Body.params.userids = @($users.userid) }
+		if ($UserGroupGuiAccess) { $Body.params.gui_access = $UserGroupGuiAccess }
+		if ($UserGroupDebugMode) { $Body.params.debug_mode = $UserGroupDebugMode }
+		if ($UserGroupUsersStatus) { $Body.params.users_status = $UserGroupUsersStatus }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -4579,73 +4591,74 @@ Function Set-ZabbixUserGroup {
 	#>
 	
 	[cmdletbinding()]
-	[Alias("szug")]
+	[Alias('szug')]
 	Param (
-		[Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupName,
-		[Alias("usrgrpid")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupID,
+		[Alias('name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupName,
+		[Alias('usrgrpid')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupID,
 		# Whether debug mode is enabled or disabled. Possible values are: 0 - (default) disabled; 1 - enabled.
-		[Alias("debug_mode")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupDebugMode,
+		[Alias('debug_mode')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupDebugMode,
 		# Frontend authentication method of the users in the group. Possible values: 0 - (default) use the system default authentication method; 1 - use internal authentication; 2 - disable access to the frontend.
-		[Alias("gui_access")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupGuiAccess,
+		[Alias('gui_access')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupGuiAccess,
 		# Whether the user group is enabled or disabled. Possible values are: 0 - (default) enabled; 1 - disabled.
-		[Alias("users_status")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupUsersStatus,
+		[Alias('users_status')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$UserGroupUsersStatus,
 		# ID of the host group to add permission to.
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupAccessRightsHostGroupID,
 		# Access level to the host group. Possible values: 0 - access denied; 2 - read-only access; 3 - read-write access.
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$UserGroupAccessRightsPermission,
-		[Alias("rights")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserGroupAccessRights,
+		[Alias('rights')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserGroupAccessRights,
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$rights,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$userids,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$users,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$userids,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$users,
 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "usergroup.update"
-			params = @{
+			method  = 'usergroup.update'
+			params  = @{
 				usrgrpid = $UserGroupID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if ($UserGroupName) {$Body.params.name=$UserGroupName}
-		if ($UserGroupAccessRights) {$Body.params.rights=@(@($UserGroupAccessRights))}
-		if ($UserID) {$Body.params.userids=$UserID} elseif ($users) {$Body.params.userids=@($users.userid)}
-		if ($UserGroupGuiAccess) {$Body.params.gui_access=$UserGroupGuiAccess}
-		if ($UserGroupDebugMode) {$Body.params.debug_mode=$UserGroupDebugMode}
-		if ($UserGroupUsersStatus) {$Body.params.users_status=$UserGroupUsersStatus}
+		if ($UserGroupName) { $Body.params.name = $UserGroupName }
+		if ($UserGroupAccessRights) { $Body.params.rights = @(@($UserGroupAccessRights)) }
+		if ($UserID) { $Body.params.userids = $UserID } elseif ($users) { $Body.params.userids = @($users.userid) }
+		if ($UserGroupGuiAccess) { $Body.params.gui_access = $UserGroupGuiAccess }
+		if ($UserGroupDebugMode) { $Body.params.debug_mode = $UserGroupDebugMode }
+		if ($UserGroupUsersStatus) { $Body.params.users_status = $UserGroupUsersStatus }
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 3
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
 
 Function Remove-ZabbixUserGroup { 
-    <#
+	<#
 	.Synopsis
 		Remove/Delete user group
 	.Description
@@ -4663,51 +4676,51 @@ Function Remove-ZabbixUserGroup {
 		Delete multiple user groups
 	#>
 	
-	[cmdletbinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzug","Delete-ZabbixUserGroup")]
+	[cmdletbinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzug', 'Delete-ZabbixUserGroup')]
 	Param (
-		[Alias("usrgrpid")][Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][array]$UserGroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$UserGroupName,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Alias('usrgrpid')][Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][array]$UserGroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$UserGroupName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "usergroup.delete"
-			params = @($UserGroupID)
+			method  = 'usergroup.delete'
+			params  = @($UserGroupID)
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ($UserGroupID.count -gt 0) {
 			if ([bool]$WhatIfPreference.IsPresent) {}
-			if ($PSCmdlet.ShouldProcess("$((Get-ZabbixUserGroup | ? usrgrpid -match ($UserGroupID -join "|")).name)","Delete")) {  
-				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+			if ($PSCmdlet.ShouldProcess("$((Get-ZabbixUserGroup | Where-Object usrgrpid -Match ($UserGroupID -join '|')).name)", 'Delete')) {  
+				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 			}
 		}
 		else {
 			if ([bool]$WhatIfPreference.IsPresent) {}
-			if ($PSCmdlet.ShouldProcess("$(Get-ZabbixUserGroup | ? usrgrpid -eq $UserGroupID | select usrgrpid,name)","Delete")) {  
-				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+			if ($PSCmdlet.ShouldProcess("$(Get-ZabbixUserGroup | Where-Object usrgrpid -EQ $UserGroupID | Select-Object usrgrpid,name)", 'Delete')) {  
+				$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 			}
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -4728,63 +4741,64 @@ Function Get-ZabbixHistory {
 		Get history for web/http test errors for host "server" for last 10 days. present time in UTC/GMT-5
 	#>
 	[cmdletbinding()]
-	[Alias("gzhist")]
+	[Alias('gzhist')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$ItemID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$ItemID,
 		#epoch time
 		#TimeFrom to display the history. Default: -48, form 48 hours ago. Time is in UTC/GMT+0
-		$TimeFrom=(convertTo-epoch ((get-date).addhours(-48)).ToUniversalTime()),
+		$TimeFrom = (convertTo-epoch ((Get-Date).addhours(-48)).ToUniversalTime()),
 		#epoch time
 		#TimeTil to display the history. Default: till now. Time is in UTC/GMT+0
-		$TimeTill=(convertTo-epoch ((get-date).addhours(0)).ToUniversalTime()),
+		$TimeTill = (convertTo-epoch ((Get-Date).addhours(0)).ToUniversalTime()),
 		#Limit output to #lines. Default: 50
-		$Limit=50,
+		$Limit = 50,
 		#can sort by: itemid and clock. Default: by clock.
-		[array] $SortBy="clock",
+		[array] $SortBy = 'clock',
 		#History object type to return: 0 - float; 1 - string; 2 - log; 3 - integer; 4 - text. Default: 1
-		$History=1,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		$History = 1,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "history.get"
-			params = @{
-				output = "extend"
-				history = $History
-				itemids = $ItemID
+			method  = 'history.get'
+			params  = @{
+				output    = 'extend'
+				history   = $History
+				itemids   = $ItemID
 				sortfield = $SortBy
-				sortorder = "DESC"
-				limit = $Limit
-				hostids = $HostID
+				sortorder = 'DESC'
+				limit     = $Limit
+				hostids   = $HostID
 				time_from = $TimeFrom
 				time_till = $TimeTill
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -4829,55 +4843,56 @@ Function Get-ZabbixApplication {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gzapp")]
+	[Alias('gzapp')]
 	Param (
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "application.get"
-			params = @{
-				output = "extend"
-				selectHost = @(
-					"hostid",
-					"host"
+			method  = 'application.get'
+			params  = @{
+				output                     = 'extend'
+				selectHost                 = @(
+					'hostid',
+					'host'
 				)
 				# selectItems = "extend"
-				selectDiscoveryRule = "extend"
-				selectApplicationDiscovery = "extend"
-				sortfield = "name"
-				hostids = $HostID
-				groupids = $GroupID
-				templateids = $TemplateID
+				selectDiscoveryRule        = 'extend'
+				selectApplicationDiscovery = 'extend'
+				sortfield                  = 'name'
+				hostids                    = $HostID
+				groupids                   = $GroupID
+				templateids                = $TemplateID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -4894,45 +4909,45 @@ Function Set-ZabbixApplication {
 	#>
     
 	[CmdletBinding()]
-	[Alias("szapp")]
+	[Alias('szapp')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$applicationid,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$applicationid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "application.update"
-			params = @{
+			method  = 'application.update'
+			params  = @{
 				applicationid = $applicationid
-				name = $Name
+				name          = $Name
 				# hostid = $HostID
 				# templateids = $TemplateID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -4947,45 +4962,45 @@ Function Remove-ZabbixApplication {
 		Delete application from the template
 	#>
     
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("Delete-ZabbixApplication","rzapp")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('Delete-ZabbixApplication', 'rzapp')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$applicationId,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$applicationId,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "application.delete"
-			params = @($applicationId)
+			method  = 'application.delete'
+			params  = @($applicationId)
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess("$($Name+"@"+(Get-ZabbixApplication | ? name -eq "$Name" | ? hostid -eq $HostID).host.host)","Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess("$($Name+'@'+(Get-ZabbixApplication | Where-Object name -EQ "$Name" | Where-Object hostid -EQ $HostID).host.host)", 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5013,59 +5028,59 @@ Function New-ZabbixApplication {
 	#>
     
 	[CmdletBinding()]
-	[Alias("nzapp")]
+	[Alias('nzapp')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Name,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$HostID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$TemplateID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 		
-		If (!$HostID -and !$TemplateID) {write-host "`nHostID or TemplateID is required.`n" -f red; Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | out-string | Remove-EmptyLines; break}
+		If (!$HostID -and !$TemplateID) { Write-Host "`nHostID or TemplateID is required.`n" -f red; Get-Help -ex $PSCmdlet.MyInvocation.MyCommand.Name | Out-String | Remove-EmptyLines; break }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		if ($HostID) {
 			$Body = @{
-				method = "application.create"
-				params = @{
-					name = $Name
+				method  = 'application.create'
+				params  = @{
+					name   = $Name
 					hostid = $HostID
 				}
 
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		if ($TemplateID) {
 			$Body = @{
-				method = "application.create"
-				params = @{
-					name = $Name
+				method  = 'application.create'
+				params  = @{
+					name   = $Name
 					hostid = $TemplateID
 				}
 
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5098,43 +5113,44 @@ Function Get-ZabbixHostInterface {
 		Get interface(s) for the host(s)
 	#>
 	[cmdletbinding()]
-	[Alias("gzhsti")]
+	[Alias('gzhsti')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "hostinterface.get"
-			params = @{
-				output = "extend"
+			method  = 'hostinterface.get'
+			params  = @{
+				output  = 'extend'
 				hostids = $HostID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -5177,56 +5193,56 @@ Function Set-ZabbixHostInterface {
 		Remove all JMX (type 4) interfaces from host
 	#>
 	[cmdletbinding()]
-	[Alias("szhsti")]
+	[Alias('szhsti')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$InterfaceID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$IP,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$DNS="",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Port,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$InterfaceID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$IP,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$DNS = '',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Port,
 		#Main: Possible values are:  0 - not default;  1 - default. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$main,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$main,
 		#Type: Possible values are:  1 - agent;  2 - SNMP;  3 - IPMI;  4 - JMX. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$type="4",
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$type = '4',
 		#UseIP: Possible values are:  0 - connect using host DNS name;  1 - connect using host IP address for this host interface. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$useIP="1",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$useIP = '1',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 		
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "hostinterface.update"
-			params = @{
-				hostid = $HostID
+			method  = 'hostinterface.update'
+			params  = @{
+				hostid      = $HostID
 				interfaceid = $InterfaceID
-				port = $Port
-				ip = $IP
-				main = $main
-				dns = $DNS
-				useip = $useIP
-				type = $type
+				port        = $Port
+				ip          = $IP
+				main        = $main
+				dns         = $DNS
+				useip       = $useIP
+				type        = $type
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 ######### --> This should be checked ---> end
@@ -5286,84 +5302,84 @@ Function New-ZabbixHostInterface {
 		Add new JMX interface with matching new JMX template, step by step	
 	#>
 	[cmdletbinding()]
-	[Alias("nzhsti")]
+	[Alias('nzhsti')]
 	Param (
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$HostID,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$IP,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$DNS="",
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$Port,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$HostID,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$IP,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$DNS = '',
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$Port,
 		#Main: Possible values are:  0 - not default;  1 - default. 
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$main="0",
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$main = '0',
 		#Type: Possible values are:  1 - agent;  2 - SNMP;  3 - IPMI;  4 - JMX. 
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$type="4",
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$type = '4',
 		#UseIP: Possible values are:  0 - connect using host DNS name;  1 - connect using host IP address for this host interface. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$useIP="1",
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$useIP = '1',
 		#[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$InterfaceID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$SnmpVersion="2",
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$SnmpVersion = '2',
 		#SnmpBulk: Possible values are:  0 - don't use bulk requests;  1 - use bulk requests. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$SnmpBulk="1",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$SnmpCommunity='{$SNMP_COMMUNITY}',
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$SnmpBulk = '1',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$SnmpCommunity = '{$SNMP_COMMUNITY}',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
-		if ($type -eq "2") {
+		if ($type -eq '2') {
 			$Body = @{
-				method = "hostinterface.create"
-				params = @{
-					hostid = $HostID
-					main = $main
-					dns = $dns
-					port = $Port
-					ip = $IP
-					useip = $useIP
-					type = $type
+				method  = 'hostinterface.create'
+				params  = @{
+					hostid  = $HostID
+					main    = $main
+					dns     = $dns
+					port    = $Port
+					ip      = $IP
+					useip   = $useIP
+					type    = $type
 					details = @{
-						version = $SnmpVersion
-						bulk = $SnmpBulk
+						version   = $SnmpVersion
+						bulk      = $SnmpBulk
 						community = $SnmpCommunity
 					}
 				}
 
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 		else {
 			$Body = @{
-				method = "hostinterface.create"
-				params = @{
+				method  = 'hostinterface.create'
+				params  = @{
 					hostid = $HostID
-					main = $main
-					dns = $dns
-					port = $Port
-					ip = $IP
-					useip = $useIP
-					type = $type
+					main   = $main
+					dns    = $dns
+					port   = $Port
+					ip     = $IP
+					useip  = $useIP
+					type   = $type
 				}
 
 				jsonrpc = $jsonrpc
-				id = $id
-				auth = $session
+				id      = $id
+				
 			}
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5383,44 +5399,44 @@ Function Remove-ZabbixHostInterface {
 		Get-ZabbixHost | ? name -match hostName | ? name -notmatch otherHostName | Get-ZabbixHostInterface | ? port -match 31021 | Remove-ZabbixHostInterface
 		Remove interfaces by port
 	#>
-	[CmdletBinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzhsti")]
+	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzhsti')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$HostID,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][array]$InterfaceId,
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$Port,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$HostID,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][array]$InterfaceId,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$Port,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "hostinterface.delete"
-			params = @($interfaceid)
+			method  = 'hostinterface.delete'
+			params  = @($interfaceid)
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($Port,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($Port, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5460,50 +5476,51 @@ Function Get-ZabbixScreen {
 	#>
     
 	[CmdletBinding()]
-	[Alias("gzscr")]
+	[Alias('gzscr')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$UserID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$ScreenID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$ScreenItemID,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$UserID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$ScreenID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$ScreenItemID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URL = ($global:zabSessionParams.url)
+	)
     
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 	
 		$Body = @{
-			method = "screen.get"
-			params = @{
-				output = "extend"
-				selectUsers = "extend"
-				selectUserGroups = "extend"
-				selectScreenItems = "extend"
-				screenids = $ScreenID
-				userids = $UserID
-				screenitemids = $ScreenItemID
+			method  = 'screen.get'
+			params  = @{
+				output            = 'extend'
+				selectUsers       = 'extend'
+				selectUserGroups  = 'extend'
+				selectScreenItems = 'extend'
+				screenids         = $ScreenID
+				userids           = $UserID
+				screenitemids     = $ScreenItemID
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -5520,43 +5537,43 @@ Function Get-ZabbixProblem {
 	#>
 	[CmdletBinding()]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$objectids,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$objectids,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 		
 		$Body = @{
-			method = "problem.get"
-			params = @{
-				output = "extend"
-				selectAcknowledges = "extend"
-				selectTags  = "extend"
-				objectids = $objectid
-				recent 	= "true"
-				sortfield = "eventid"
-				sortorder = "DESC"	
+			method  = 'problem.get'
+			params  = @{
+				output             = 'extend'
+				selectAcknowledges = 'extend'
+				selectTags         = 'extend'
+				objectids          = $objectid
+				recent             = 'true'
+				sortfield          = 'eventid'
+				sortorder          = 'DESC'	
 				
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 		
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5594,61 +5611,62 @@ Function Get-ZabbixGraph {
 	#>
     
 	[cmdletbinding()]
-	[Alias("gzgph")]
+	[Alias('gzgph')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$GraphID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$ItemID,
-		[switch]$expandName=$true,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$GraphID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$TemplateID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][array]$ItemID,
+		[switch]$expandName = $true,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 		
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "graph.get"
-			params = @{
-				output = "extend"
-				selectTemplates = "extend"
-				selectHosts = @(
-					"hostid",
-					"name"
+			method  = 'graph.get'
+			params  = @{
+				output               = 'extend'
+				selectTemplates      = 'extend'
+				selectHosts          = @(
+					'hostid',
+					'name'
 				)
-				selectItems = "extend"
-				selectGraphItems = "extend"
-				selectGraphDiscovery = "extend"
-				expandName = $expandName
-				hostids = $HostID
-				graphids = $GraphID
-				templateids = $TemplateID
-				itemids = $ItemID
-				sortfield = "name"
+				selectItems          = 'extend'
+				selectGraphItems     = 'extend'
+				selectGraphDiscovery = 'extend'
+				expandName           = $expandName
+				hostids              = $HostID
+				graphids             = $GraphID
+				templateids          = $TemplateID
+				itemids              = $ItemID
+				sortfield            = 'name'
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -5680,61 +5698,63 @@ Function Save-ZabbixGraph {
     #>
     
 	[cmdletbinding()]
-	[Alias("szgph")]
+	[Alias('szgph')]
 	param (
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$true)][string]$GraphID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$fileFullPath,
-		[Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true)][string]$sTime=(convertTo-epoch ((get-date).addmonths(-1)).ToUniversalTime()),
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Period=(convertTo-epoch ((get-date).addhours(0)).ToUniversalTime())-$sTime,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Width="900",
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$Hight="200",
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $true)][string]$GraphID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$fileFullPath,
+		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)][string]$sTime = (convertTo-epoch ((Get-Date).addmonths(-1)).ToUniversalTime()),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Period = (convertTo-epoch ((Get-Date).addhours(0)).ToUniversalTime()) - $sTime,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Width = '900',
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$Hight = '200',
 		[switch]$show,
-        [switch]$mail,
-        [string]$SMTPServer,
-        [string[]]$to,
-        [string]$from,
-        [string]$subject,
-        [string]$priority,
-        [string]$body
+		[switch]$mail,
+		[string]$SMTPServer,
+		[string[]]$to,
+		[string]$from,
+		[string]$subject,
+		[string]$priority,
+		[string]$body
 	)
 
-	if (!(Get-ZabbixSession)) {return}
-	elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+	if (!(Get-ZabbixSession)) { return }
+	elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-	$boundparams=$PSBoundParameters | out-string
-	write-verbose "($boundparams)"
+	$boundparams = $PSBoundParameters | Out-String
+	Write-Verbose "($boundparams)"
     
-    $psbbixTmpDir="$env:TEMP\psbbix"
-    if (!$fileFullPath) {
-        if (!(test-path $psbbixTmpDir)) {mkdir $psbbixTmpDir}
-        $fileFullPath="$psbbixTmpDir\graph-$graphid.png"
-    }
-	write-verbose "Graph files located here: $psbbixTmpDir"
-	write-verbose "Full path: $fileFullPath"
+	$psbbixTmpDir = "$env:TEMP\psbbix"
+	if (!$fileFullPath) {
+		if (!(Test-Path $psbbixTmpDir)) { mkdir $psbbixTmpDir }
+		$fileFullPath = "$psbbixTmpDir\graph-$graphid.png"
+	}
+	Write-Verbose "Graph files located here: $psbbixTmpDir"
+	Write-Verbose "Full path: $fileFullPath"
 	
 	if ($noSSL) {
-		$gurl=($zabSessionParams.url.replace('https','http'))
-        try {invoke-webrequest "$gurl/chart2.php?graphid=$graphid`&width=$Width`&hight=$Hight`&stime=$sTime`&period=$Period" -OutFile $fileFullPath}
-        catch {write-host "$_"}
-	} else {
-		$gurl=$zabSessionParams.url
-        write-host "SSL doesn't work currently." -f yellow
+		$gurl = ($zabSessionParams.url.replace('https', 'http'))
+		try { Invoke-WebRequest "$gurl/chart2.php?graphid=$graphid`&width=$Width`&hight=$Hight`&stime=$sTime`&period=$Period" -OutFile $fileFullPath }
+		catch { Write-Host "$_" }
+	}
+ else {
+		$gurl = $zabSessionParams.url
+		Write-Host "SSL doesn't work currently." -f yellow
 	}
 
 	if ($show) {
-        if (test-path "c:\Program Files (x86)\Google\Chrome\Application\chrome.exe") {&"c:\Program Files (x86)\Google\Chrome\Application\chrome.exe" -incognito $fileFullPath}
-        elseif (test-path "c:\Program Files\Internet Explorer\iexplore.exe") {&"c:\Program Files\Internet Explorer\iexplore.exe" $fileFullPath}
-        else {start "file:///$fileFullPath"}
+		if (Test-Path 'c:\Program Files (x86)\Google\Chrome\Application\chrome.exe') { &'c:\Program Files (x86)\Google\Chrome\Application\chrome.exe' -incognito $fileFullPath }
+		elseif (Test-Path 'c:\Program Files\Internet Explorer\iexplore.exe') { &'c:\Program Files\Internet Explorer\iexplore.exe' $fileFullPath }
+		else { Start-Process "file:///$fileFullPath" }
 	}
 	
 	if ($mail) {
-        if (!$from) {$from="zabbix@example.net"}
-        if ($subject) {$subject="Zabbix: graphid: $GraphID. $subject"}
-        if (!$subject) {$subject="Zabbix: graphid: $GraphID"}
-	    try {
-            if ($body) {Send-MailMessage -from $from -to $to -subject $subject -body $body -Attachments $fileFullPath -SmtpServer $SMTPServer}
-            else {Send-MailMessage -from $from -to $to -subject $subject -Attachments $fileFullPath -SmtpServer $SMTPServer}
-        } catch {$_.exception.message}
+		if (!$from) { $from = 'zabbix@example.net' }
+		if ($subject) { $subject = "Zabbix: graphid: $GraphID. $subject" }
+		if (!$subject) { $subject = "Zabbix: graphid: $GraphID" }
+		try {
+			if ($body) { Send-MailMessage -From $from -To $to -Subject $subject -Body $body -Attachments $fileFullPath -SmtpServer $SMTPServer }
+			else { Send-MailMessage -From $from -To $to -Subject $subject -Attachments $fileFullPath -SmtpServer $SMTPServer }
+		}
+		catch { $_.exception.message }
 	}
 }
 
@@ -5755,38 +5775,38 @@ Function Get-ZabbixMediaType {
 		Copy/Clone existing media type to new one, and disable it		
 	#>
 	[cmdletbinding()]
-	[Alias("gzmt")]
+	[Alias('gzmt')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 		
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "mediatype.get"
-			params = @{
-				output = "extend"
-				selectUsers = "extend"
+			method  = 'mediatype.get'
+			params  = @{
+				output      = 'extend'
+				selectUsers = 'extend'
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5834,98 +5854,98 @@ Function New-ZabbixMediaType {
 		Copy/Clone existing media type to new one, and disable it
 	#>
 	[cmdletbinding()]
-	[Alias("nzmt")]
+	[Alias('nzmt')]
 	Param (
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][string]$Description,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][string]$Description,
 		# Transport used by the media type. Possible values: 0 - e-mail; 1 - script; 2 - SMS; 3 - Jabber; 100 - Ez Texting.
-		[Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True)][int]$Type,
+		[Parameter(Mandatory = $True, ValueFromPipelineByPropertyName = $True)][int]$Type,
 		# Email address from which notifications will be sent. Required for email media types.
-		[Alias("smtp_email")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$EmailAddressFrom,
+		[Alias('smtp_email')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$EmailAddressFrom,
 		# SMTP HELO. Required for email media types.
-		[Alias("smtp_helo")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SMTPServerHostName,
+		[Alias('smtp_helo')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SMTPServerHostName,
 		# SMTP server. Required for email media types.
-		[Alias("smtp_server")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SMTPServerIPorFQDN,
+		[Alias('smtp_server')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SMTPServerIPorFQDN,
 		# SMTP server port.
-		[Alias("smtp_port")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SMTPServerPort,
+		[Alias('smtp_port')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SMTPServerPort,
 		# SMTP server authentication required. Possible values: 0 - (default) disabled; 1 - enabled
-		[Alias("smtp_authentication")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerAuthentication,
+		[Alias('smtp_authentication')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerAuthentication,
 		# SMTP server connection security. Possible values: 0 - (default) disabled; 1 - StartTLS; 2 - SSL/TLS
-		[Alias("smtp_security")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerConnectionSecurity,
+		[Alias('smtp_security')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerConnectionSecurity,
 		# SMTP server connection security. Possible values: 0 - (default) disabled; 1 - enabled
-		[Alias("smtp_verify_peer")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerConnectionSecurityVerifyPeer,
+		[Alias('smtp_verify_peer')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerConnectionSecurityVerifyPeer,
 		# SMTP server connection security. Possible values: 0 - (default) disabled; 1 - enabled
-		[Alias("smtp_verify_host")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerConnectionSecurityVerifyHost,
+		[Alias('smtp_verify_host')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerConnectionSecurityVerifyHost,
 		# Whether the media type is enabled. Possible values: 0 - (default) enabled; 1 - disabled.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$status,
 		# Username or Jabber identifier. Required for Jabber and Ez Texting media types.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Username,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Username,
 		# Authentication password. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Passwd,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Passwd,
 		# Serial device name of the GSM modem. Required for SMS media types.
-		[Alias("gsm_modem")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$GsmModem,
+		[Alias('gsm_modem')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$GsmModem,
 		# For script media types exec_path contains the name of the executed script. 
-		[Alias("exec_path")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$ExecScriptName,
+		[Alias('exec_path')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$ExecScriptName,
 		# Script parameters. Each parameter ends with a new line feed.
-		[Alias("exec_params")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$ExecScriptParams,
+		[Alias('exec_params')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$ExecScriptParams,
 		# The maximum number of alerts that can be processed in parallel. Possible values for SMS: 1 - (default) Possible values for other media types: 0-100
-		[Alias("maxsessions")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$MaxAlertSendSessions,
+		[Alias('maxsessions')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$MaxAlertSendSessions,
 		# The maximum number of attempts to send an alert. Possible values: 1-10 Default value: 3
-		[Alias("maxattempts")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$MaxAlertSendAttempts,
+		[Alias('maxattempts')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$MaxAlertSendAttempts,
 		# The interval between retry attempts. Accepts seconds and time unit with suffix. Possible values: 0-60s Default value: 10s
-		[Alias("attempt_interval")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$AlertSendRetryInterval,
+		[Alias('attempt_interval')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$AlertSendRetryInterval,
 		
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 		
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "mediatype.create"
-			params = @{
+			method  = 'mediatype.create'
+			params  = @{
 				description = $Description
-				type = $Type
-				status = $status
+				type        = $Type
+				status      = $status
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		# General
-		if ($MaxAlertSendSessions) {$Body.params.maxsessions=$MaxAlertSendSessions}
-		if ($MaxAlertSendAttempts) {$Body.params.maxattempts=$MaxAlertSendAttempts}
-		if ($AlertSendRetryInterval) {$Body.params.attempt_interval=$AlertSendRetryInterval}
+		if ($MaxAlertSendSessions) { $Body.params.maxsessions = $MaxAlertSendSessions }
+		if ($MaxAlertSendAttempts) { $Body.params.maxattempts = $MaxAlertSendAttempts }
+		if ($AlertSendRetryInterval) { $Body.params.attempt_interval = $AlertSendRetryInterval }
 		# Email
-		if ($SMTPServerIPorFQDN) {$Body.params.smtp_server=$SMTPServerIPorFQDN}
-		if ($SMTPServerPort) {$Body.params.smtp_port=$SMTPServerPort}
-		if ($SMTPServerHostName) {$Body.params.smtp_helo=$SMTPServerHostName}
-		if ($EmailAddressFrom) {$Body.params.smtp_email=$EmailAddressFrom}
-		if ($SMTPServerAuthentication) {$Body.params.smtp_authentication=$SMTPServerAuthentication}
-		if ($Username) {$Body.params.username=$Username}
-		if ($Passwd) {$Body.params.passwd=$Passwd}
-		if ($SMTPServerConnectionSecurity) {$Body.params.smtp_security=$SMTPServerConnectionSecurity}
-		if ($SMTPServerConnectionSecurityVerifyPeer) {$Body.params.smtp_verify_peer=$SMTPServerConnectionSecurityVerifyPeer}
-		if ($SMTPServerConnectionSecurityVerifyHost) {$Body.params.smtp_verify_host=$SMTPServerConnectionSecurityVerifyHost}
+		if ($SMTPServerIPorFQDN) { $Body.params.smtp_server = $SMTPServerIPorFQDN }
+		if ($SMTPServerPort) { $Body.params.smtp_port = $SMTPServerPort }
+		if ($SMTPServerHostName) { $Body.params.smtp_helo = $SMTPServerHostName }
+		if ($EmailAddressFrom) { $Body.params.smtp_email = $EmailAddressFrom }
+		if ($SMTPServerAuthentication) { $Body.params.smtp_authentication = $SMTPServerAuthentication }
+		if ($Username) { $Body.params.username = $Username }
+		if ($Passwd) { $Body.params.passwd = $Passwd }
+		if ($SMTPServerConnectionSecurity) { $Body.params.smtp_security = $SMTPServerConnectionSecurity }
+		if ($SMTPServerConnectionSecurityVerifyPeer) { $Body.params.smtp_verify_peer = $SMTPServerConnectionSecurityVerifyPeer }
+		if ($SMTPServerConnectionSecurityVerifyHost) { $Body.params.smtp_verify_host = $SMTPServerConnectionSecurityVerifyHost }
 		# Other
-		if ($ExecScriptName) {$Body.params.exec_path=$ExecScriptName} 
-		if ($ExecScriptParams) {$Body.params.exec_params="$ExecScriptParams`n"} 
-		if ($GsmModem) {$Body.params.gsm_modem=$GsmModem} 
+		if ($ExecScriptName) { $Body.params.exec_path = $ExecScriptName } 
+		if ($ExecScriptParams) { $Body.params.exec_params = "$ExecScriptParams`n" } 
+		if ($GsmModem) { $Body.params.gsm_modem = $GsmModem } 
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -5976,101 +5996,101 @@ Function Set-ZabbixMediaType {
 		Update multiple media types
 	#>
 	[cmdletbinding()]
-	[Alias("szmt")]
+	[Alias('szmt')]
 	Param (
 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$mediatypeid,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Description,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$mediatypeid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Description,
 		# Transport used by the media type. Possible values: 0 - e-mail; 1 - script; 2 - SMS; 3 - Jabber; 100 - Ez Texting.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$Type,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$Type,
 		# Email address from which notifications will be sent. Required for email media types.
-		[Alias("smtp_email")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$EmailAddressFrom,
+		[Alias('smtp_email')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$EmailAddressFrom,
 		# SMTP HELO. Required for email media types.
-		[Alias("smtp_helo")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SMTPServerHostName,
+		[Alias('smtp_helo')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SMTPServerHostName,
 		# SMTP server. Required for email media types.
-		[Alias("smtp_server")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SMTPServerIPorFQDN,
+		[Alias('smtp_server')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SMTPServerIPorFQDN,
 		# SMTP server port.
-		[Alias("smtp_port")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SMTPServerPort,
+		[Alias('smtp_port')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SMTPServerPort,
 		# SMTP server authentication required. Possible values: 0 - (default) disabled; 1 - enabled
-		[Alias("smtp_authentication")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerAuthentication,
+		[Alias('smtp_authentication')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerAuthentication,
 		# SMTP server connection security. Possible values: 0 - (default) disabled; 1 - StartTLS; 2 - SSL/TLS
-		[Alias("smtp_security")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerConnectionSecurity,
+		[Alias('smtp_security')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerConnectionSecurity,
 		# SMTP server connection security. Possible values: 0 - (default) disabled; 1 - enabled
-		[Alias("smtp_verify_peer")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerConnectionSecurityVerifyPeer,
+		[Alias('smtp_verify_peer')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerConnectionSecurityVerifyPeer,
 		# SMTP server connection security. Possible values: 0 - (default) disabled; 1 - enabled
-		[Alias("smtp_verify_host")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$SMTPServerConnectionSecurityVerifyHost,
+		[Alias('smtp_verify_host')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$SMTPServerConnectionSecurityVerifyHost,
 		# Whether the media type is enabled. Possible values: 0 - (default) enabled; 1 - disabled.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$status,
 		# Username or Jabber identifier. Required for Jabber and Ez Texting media types.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Username,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Username,
 		# Authentication password. 
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Passwd,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Passwd,
 		# Serial device name of the GSM modem. Required for SMS media types.
-		[Alias("gsm_modem")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$GsmModem,
+		[Alias('gsm_modem')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$GsmModem,
 		# For script media types exec_path contains the name of the executed script. 
-		[Alias("exec_path")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$ExecScriptName,
+		[Alias('exec_path')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$ExecScriptName,
 		# Script parameters. Each parameter ends with a new line feed.
-		[Alias("exec_params")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$ExecScriptParams,
+		[Alias('exec_params')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$ExecScriptParams,
 		# The maximum number of alerts that can be processed in parallel. Possible values for SMS: 1 - (default) Possible values for other media types: 0-100
-		[Alias("maxsessions")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$MaxAlertSendSessions,
+		[Alias('maxsessions')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$MaxAlertSendSessions,
 		# The maximum number of attempts to send an alert. Possible values: 1-10 Default value: 3
-		[Alias("maxattempts")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$MaxAlertSendAttempts,
+		[Alias('maxattempts')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$MaxAlertSendAttempts,
 		# The interval between retry attempts. Accepts seconds and time unit with suffix. Possible values: 0-60s Default value: 10s
-		[Alias("attempt_interval")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$AlertSendRetryInterval,
+		[Alias('attempt_interval')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$AlertSendRetryInterval,
 		
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 		
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "mediatype.update"
-			params = @{
+			method  = 'mediatype.update'
+			params  = @{
 				mediatypeid = $mediatypeid
 				description = $Description
-				type = $Type
-				status = $status
+				type        = $Type
+				status      = $status
 			}
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		# General
-		if ($MaxAlertSendSessions) {$Body.params.maxsessions=$MaxAlertSendSessions}
-		if ($MaxAlertSendAttempts) {$Body.params.maxattempts=$MaxAlertSendAttempts}
-		if ($AlertSendRetryInterval) {$Body.params.attempt_interval=$AlertSendRetryInterval}
+		if ($MaxAlertSendSessions) { $Body.params.maxsessions = $MaxAlertSendSessions }
+		if ($MaxAlertSendAttempts) { $Body.params.maxattempts = $MaxAlertSendAttempts }
+		if ($AlertSendRetryInterval) { $Body.params.attempt_interval = $AlertSendRetryInterval }
 		# Email
-		if ($SMTPServerIPorFQDN) {$Body.params.smtp_server=$SMTPServerIPorFQDN}
-		if ($SMTPServerPort) {$Body.params.smtp_port=$SMTPServerPort}
-		if ($SMTPServerHostName) {$Body.params.smtp_helo=$SMTPServerHostName}
-		if ($EmailAddressFrom) {$Body.params.smtp_email=$EmailAddressFrom}
-		if ($SMTPServerAuthentication) {$Body.params.smtp_authentication=$SMTPServerAuthentication}
-		if ($Username) {$Body.params.username=$Username}
-		if ($Passwd) {$Body.params.passwd=$Passwd}
-		if ($SMTPServerConnectionSecurity) {$Body.params.smtp_security=$SMTPServerConnectionSecurity}
-		if ($SMTPServerConnectionSecurityVerifyPeer) {$Body.params.smtp_verify_peer=$SMTPServerConnectionSecurityVerifyPeer}
-		if ($SMTPServerConnectionSecurityVerifyHost) {$Body.params.smtp_verify_host=$SMTPServerConnectionSecurityVerifyHost}
+		if ($SMTPServerIPorFQDN) { $Body.params.smtp_server = $SMTPServerIPorFQDN }
+		if ($SMTPServerPort) { $Body.params.smtp_port = $SMTPServerPort }
+		if ($SMTPServerHostName) { $Body.params.smtp_helo = $SMTPServerHostName }
+		if ($EmailAddressFrom) { $Body.params.smtp_email = $EmailAddressFrom }
+		if ($SMTPServerAuthentication) { $Body.params.smtp_authentication = $SMTPServerAuthentication }
+		if ($Username) { $Body.params.username = $Username }
+		if ($Passwd) { $Body.params.passwd = $Passwd }
+		if ($SMTPServerConnectionSecurity) { $Body.params.smtp_security = $SMTPServerConnectionSecurity }
+		if ($SMTPServerConnectionSecurityVerifyPeer) { $Body.params.smtp_verify_peer = $SMTPServerConnectionSecurityVerifyPeer }
+		if ($SMTPServerConnectionSecurityVerifyHost) { $Body.params.smtp_verify_host = $SMTPServerConnectionSecurityVerifyHost }
 		# Other
-		if ($ExecScriptName) {$Body.params.exec_path=$ExecScriptName} 
-		if ($ExecScriptParams) {$Body.params.exec_params="$ExecScriptParams`n"} 
-		if ($GsmModem) {$Body.params.gsm_modem=$GsmModem} 
+		if ($ExecScriptName) { $Body.params.exec_path = $ExecScriptName } 
+		if ($ExecScriptParams) { $Body.params.exec_params = "$ExecScriptParams`n" } 
+		if ($GsmModem) { $Body.params.gsm_modem = $GsmModem } 
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
-		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -6090,44 +6110,44 @@ Function Remove-ZabbixMediaType {
 		Delete-ZabbixMediaType -mediatypeid (Get-ZabbixMediaType | ? descr* -match MediaTypeToDelete-0[1-3]).mediatypeid
 		Delete media types
 	#>
-	[cmdletbinding(SupportsShouldProcess,ConfirmImpact='High')]
-	[Alias("rzmt","Delete-ZabbixMediaType")]
+	[cmdletbinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+	[Alias('rzmt', 'Delete-ZabbixMediaType')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$mediatypeid,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$mediatypeid,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][string]$URL = ($global:zabSessionParams.url)
 	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 		
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "mediatype.delete"
-			params = @(
+			method  = 'mediatype.delete'
+			params  = @(
 				$mediatypeid
 			)
 
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		if ([bool]$WhatIfPreference.IsPresent) {}
-		if ($PSCmdlet.ShouldProcess($mediatypeid,"Delete")) {  
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+		if ($PSCmdlet.ShouldProcess($mediatypeid, 'Delete')) {  
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 		}
 		# $a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
-		if ($a.result) {$a.result} else {$a.error}
+		if ($a.result) { $a.result } else { $a.error }
 	}
 }
 
@@ -6182,65 +6202,66 @@ Function Get-ZabbixHostInventory {
 	#>
 	
 	[CmdletBinding()]
-	[Alias("gzhstinv")]
+	[Alias('gzhstinv')]
 	Param (
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$HostID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][array]$GroupID,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$InventoryMode,
-		[string]$SortBy="name",
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$HostName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$HostID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][array]$GroupID,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $False)][array]$InventoryMode,
+		[string]$SortBy = 'name',
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$hostids,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$status,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
-    )
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
+	)
 	
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
+		if (!(Get-ZabbixSession)) { return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
-		write-verbose "$($hostname | out-string)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
+		Write-Verbose "$($hostname | Out-String)"
 
 		# for ($i=0; $i -lt $HostName.length; $i++) {[array]$hstn+=$(@{host = $($HostName[$i])})}
-		if ($hostname.length -gt 3) {$HostName=$HostName.host}
+		if ($hostname.length -gt 3) { $HostName = $HostName.host }
 
 		$Body = @{
-			method = "host.get"
-			params = @{
-				selectInventory = "extend"
+			method  = 'host.get'
+			params  = @{
+				selectInventory = 'extend'
 				# host = $HostName
-				hostid = $HostID
-				groupids = $GroupID
+				hostid          = $HostID
+				groupids        = $GroupID
 				# filter = @($hstn.host)
-				inventory_mode = $InventoryMode
-				filter = @{
-					host = $HostName
-					hostid = $HostID
+				inventory_mode  = $InventoryMode
+				filter          = @{
+					host    = $HostName
+					hostid  = $HostID
 					groupid = $GroupID
 					# host = @($hstn)
 				}
-				sortfield = $SortBy
+				sortfield       = $SortBy
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
 		$BodyJSON = ConvertTo-Json $Body -Depth 4
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 			# if ($a.result) {$a.result} else {$a.error}
-			if ($a.result) {$a.result.inventory} else {$a.error}
-		} catch {
+			if ($a.result) { $a.result.inventory } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 }
@@ -6292,213 +6313,214 @@ Function Set-ZabbixHostInventory {
 		CSV file used in previous example
 	#>
 	[CmdletBinding()]
-	[Alias("szhstinv")]
+	[Alias('szhstinv')]
 	Param (
-        # [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostName,
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostID,
+		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False)][array]$HostName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostID,
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$hostids,
 		# Host inventory population mode: Possible values are: -1 - disabled; 0 - (default) manual; 1 - automatic.
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][int]$InventoryMode,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$status,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][int]$InventoryMode,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$status,
 		[switch]$force,
 
 		# [Alias("type")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Type,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Type,
-		[Alias("type_full")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$TypeDetails,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Type,
+		[Alias('type_full')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$TypeDetails,
 		# [Alias("name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Name,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Name,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Name,
 		# [Alias("alias")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Alias,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Alias,
-		[Alias("os")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OSName,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Alias,
+		[Alias('os')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$OSName,
 		# [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OS,
-		[Alias("os_full")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OSFullName,
-		[Alias("os_short")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OSShortName,
-		[Alias("serialno_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SerialNumberA,
-		[Alias("serialno_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SerialNumberB,
+		[Alias('os_full')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$OSFullName,
+		[Alias('os_short')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$OSShortName,
+		[Alias('serialno_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SerialNumberA,
+		[Alias('serialno_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SerialNumberB,
 		# [Alias("tag")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Tag,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Tag,
-		[Alias("asset_tag")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$AssetTag,
-		[Alias("macaddress_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$MACAddressA,
-		[Alias("macaddress_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$MACAddressB,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Tag,
+		[Alias('asset_tag')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$AssetTag,
+		[Alias('macaddress_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$MACAddressA,
+		[Alias('macaddress_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$MACAddressB,
 		# [Alias("hardware")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Hardware,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Hardware,
-		[Alias("hardware_full")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$DetailedHardware,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Hardware,
+		[Alias('hardware_full')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$DetailedHardware,
 		# [Alias("software")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Software,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Software,
-		[Alias("software_full")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SoftwareDetails,
-		[Alias("software_app_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SoftwareApplicationA,
-		[Alias("software_app_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SoftwareApplicationB,
-		[Alias("software_app_c")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SoftwareApplicationC,
-		[Alias("software_app_d")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SoftwareApplicationD,
-		[Alias("software_app_e")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SoftwareApplicationE,
-		[Alias("contact")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$ContactPerson,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Software,
+		[Alias('software_full')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SoftwareDetails,
+		[Alias('software_app_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SoftwareApplicationA,
+		[Alias('software_app_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SoftwareApplicationB,
+		[Alias('software_app_c')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SoftwareApplicationC,
+		[Alias('software_app_d')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SoftwareApplicationD,
+		[Alias('software_app_e')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SoftwareApplicationE,
+		[Alias('contact')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$ContactPerson,
 		# [Alias("location")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Location,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Location,
-		[Alias("location_lat")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$LocationLatitude,
-		[Alias("location_lon")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$LocationLongitude,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Location,
+		[Alias('location_lat')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$LocationLatitude,
+		[Alias('location_lon')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$LocationLongitude,
 		# [Alias("notes")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Notes,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Notes,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Notes,
 		# [Alias("chassis")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Chassis,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Chassis,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Chassis,
 		# [Alias("model")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Model,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Model,
-		[Alias("hw_arch")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HWArchitecture,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Model,
+		[Alias('hw_arch')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HWArchitecture,
 		# [Alias("vendor")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Vendor,
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$Vendor,
-		[Alias("contract_number")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$ContractNumber,
-		[Alias("installer_name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$InstallerName,
-		[Alias("deployment_status")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$DeploymentStatus,
-		[Alias("url_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URLA,
-		[Alias("url_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URLB,
-		[Alias("url_c")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$URLC,
-		[Alias("host_networks")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostNetworks,
-		[Alias("host_netmask")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostSubnetMask,
-		[Alias("host_router")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HostRouter,
-		[Alias("oob_ip")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OOBIPAddress,
-		[Alias("oob_netmask")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OOBHostSubnetMask,
-		[Alias("oob_router")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$OOBRouter,
-		[Alias("date_hw_purchase")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HWPurchaseDate,
-		[Alias("date_hw_install")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HWInstallationDate,
-		[Alias("date_hw_expiry")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HWMaintenanceExpiryDate,
-		[Alias("date_hw_decomm")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$HWDecommissioningDate,
-		[Alias("site_address_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteAddressA,
-		[Alias("site_address_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteAddressB,
-		[Alias("site_address_c")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteAddressC,
-		[Alias("site_city")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteCity,
-		[Alias("site_state")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteState,
-		[Alias("site_country")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteCountry,
-		[Alias("site_zip")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteZIPCode,
-		[Alias("site_rack")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteRackLocation,
-		[Alias("site_notes")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SiteNotes,
-		[Alias("poc_1_name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryPOCName,
-		[Alias("poc_1_email")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryEmail,
-		[Alias("poc_1_phone_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryPOCPhoneA,
-		[Alias("poc_1_phone_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryPOCPhoneB,
-		[Alias("poc_1_cell")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryPOCMobileNumber,
-		[Alias("poc_1_screen")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryPOCScreenName,
-		[Alias("poc_1_notes")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$PrimaryPOCnNotes,
-		[Alias("poc_2_name")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCName,
-		[Alias("poc_2_email")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCEmail,
-		[Alias("poc_2_phone_a")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCPhoneA,
-		[Alias("poc_2_phone_b")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCPhoneB,
-		[Alias("poc_2_cell")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCMobileNumber,
-		[Alias("poc_2_screen")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCScreenName,
-		[Alias("poc_2_notes")][Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True)][string]$SecondaryPOCNotes,
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$Vendor,
+		[Alias('contract_number')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$ContractNumber,
+		[Alias('installer_name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$InstallerName,
+		[Alias('deployment_status')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$DeploymentStatus,
+		[Alias('url_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URLA,
+		[Alias('url_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URLB,
+		[Alias('url_c')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$URLC,
+		[Alias('host_networks')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostNetworks,
+		[Alias('host_netmask')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostSubnetMask,
+		[Alias('host_router')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HostRouter,
+		[Alias('oob_ip')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$OOBIPAddress,
+		[Alias('oob_netmask')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$OOBHostSubnetMask,
+		[Alias('oob_router')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$OOBRouter,
+		[Alias('date_hw_purchase')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HWPurchaseDate,
+		[Alias('date_hw_install')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HWInstallationDate,
+		[Alias('date_hw_expiry')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HWMaintenanceExpiryDate,
+		[Alias('date_hw_decomm')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$HWDecommissioningDate,
+		[Alias('site_address_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteAddressA,
+		[Alias('site_address_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteAddressB,
+		[Alias('site_address_c')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteAddressC,
+		[Alias('site_city')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteCity,
+		[Alias('site_state')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteState,
+		[Alias('site_country')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteCountry,
+		[Alias('site_zip')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteZIPCode,
+		[Alias('site_rack')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteRackLocation,
+		[Alias('site_notes')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SiteNotes,
+		[Alias('poc_1_name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryPOCName,
+		[Alias('poc_1_email')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryEmail,
+		[Alias('poc_1_phone_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryPOCPhoneA,
+		[Alias('poc_1_phone_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryPOCPhoneB,
+		[Alias('poc_1_cell')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryPOCMobileNumber,
+		[Alias('poc_1_screen')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryPOCScreenName,
+		[Alias('poc_1_notes')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$PrimaryPOCnNotes,
+		[Alias('poc_2_name')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCName,
+		[Alias('poc_2_email')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCEmail,
+		[Alias('poc_2_phone_a')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCPhoneA,
+		[Alias('poc_2_phone_b')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCPhoneB,
+		[Alias('poc_2_cell')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCMobileNumber,
+		[Alias('poc_2_screen')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCScreenName,
+		[Alias('poc_2_notes')][Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $True)][string]$SecondaryPOCNotes,
 		
-		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
-        [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$URL=($global:zabSessionParams.url)
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$jsonrpc = ($global:zabSessionParams.jsonrpc),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$session = ($global:zabSessionParams.session),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$id = ($global:zabSessionParams.id),
+		[Parameter(Mandatory = $False, ValueFromPipelineByPropertyName = $true)][string]$URL = ($global:zabSessionParams.url)
 	)
 
 	process {
 
-		if (!(Get-ZabbixSession)) {return}
-		elseif (!$psboundparameters.count) {Write-MissingParamsMessage; return}
+		if (!(Get-ZabbixSession)) { return }
+		elseif (!$psboundparameters.count) { Write-MissingParamsMessage; return }
 
-		$boundparams=$PSBoundParameters | out-string
-		write-verbose "($boundparams)"
+		$boundparams = $PSBoundParameters | Out-String
+		Write-Verbose "($boundparams)"
 
 		$Body = @{
-			method = "host.update"
-			params = @{
+			method  = 'host.update'
+			params  = @{
 				# host = $HostName
-				hostid = $HostID
-				groupid = $GroupID
+				hostid         = $HostID
+				groupid        = $GroupID
 				inventory_mode = $InventoryMode
 				# filter = @{
 				# 	host = $HostName
 				# }
-				inventory = @{}
+				inventory      = @{}
 			}
 			
 			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+			id      = $id
+			
 		}
 
-		if ($Type) {$Body.params.inventory.type=$Type}
-		if ($TypeDetails) {$Body.params.inventory.type_full=$TypeDetails}
-		if ($Name) {$Body.params.inventory.name=$Name}
-		if ($Alias) {$Body.params.inventory.alias=$Alias}
-		if ($OSName) {$Body.params.inventory.os=$OSName}
-		if ($OSFullName) {$Body.params.inventory.os_full=$OSFullName}
-		if ($OSShortName) {$Body.params.inventory.os_short=$OSShortName}
-		if ($SerialNumberA) {$Body.params.inventory.serialno_a=$SerialNumberA}
-		if ($SerialNumberB) {$Body.params.inventory.serialno_b=$SerialNumberB}
-		if ($Tag) {$Body.params.inventory.tag=$Tag}
-		if ($AssetTag) {$Body.params.inventory.asset_tag=$AssetTag}
-		if ($MACAddressA) {$Body.params.inventory.macaddress_a=$MACAddressA}
-		if ($MACAddressB) {$Body.params.inventory.macaddress_b=$MACAddressB}
-		if ($Hardware) {$Body.params.inventory.hardware=$Hardware}
-		if ($DetailedHardware) {$Body.params.inventory.hardware_full=$DetailedHardware}
-		if ($Software) {$Body.params.inventory.software=$Software}
-		if ($SoftwareDetails) {$Body.params.inventory.software_full=$SoftwareDetails}
-		if ($SoftwareApplicationA) {$Body.params.inventory.software_app_a=$SoftwareApplicationA}
-		if ($SoftwareApplicationB) {$Body.params.inventory.software_app_b=$SoftwareApplicationB}
-		if ($SoftwareApplicationC) {$Body.params.inventory.software_app_c=$SoftwareApplicationC}
-		if ($SoftwareApplicationD) {$Body.params.inventory.software_app_d=$SoftwareApplicationD}
-		if ($SoftwareApplicationE) {$Body.params.inventory.software_app_e=$SoftwareApplicationE}
-		if ($ContactPerson) {$Body.params.inventory.contact=$ContactPerson}
-		if ($Location) {$Body.params.inventory.location=$Location}
-		if ($LocationLatitude) {$Body.params.inventory.location_lat=$LocationLatitude}
-		if ($LocationLongitude) {$Body.params.inventory.location_lon=$LocationLongitude}
-		if ($Notes) {$Body.params.inventory.notes=$Notes}
-		if ($Chassis) {$Body.params.inventory.chassis=$Chassis}
-		if ($Model) {$Body.params.inventory.model=$Model}
-		if ($HWArchitecture) {$Body.params.inventory.hw_arch=$HWArchitecture}
-		if ($Vendor) {$Body.params.inventory.vendor=$Vendor}
-		if ($ContractNumber) {$Body.params.inventory.contract_number=$ContractNumber}
-		if ($InstallerName) {$Body.params.inventory.installer_name=$InstallerName}
-		if ($DeploymentStatus) {$Body.params.inventory.deployment_status=$DeploymentStatus}
-		if ($URLA) {$Body.params.inventory.url_a=$URLA}
-		if ($URLB) {$Body.params.inventory.url_b=$URLB}
-		if ($URLC) {$Body.params.inventory.url_c=$URLC}
-		if ($HostNetworks) {$Body.params.inventory.host_networks=$HostNetworks}
-		if ($HostSubnetMask) {$Body.params.inventory.host_netmask=$HostSubnetMask}
-		if ($HostRouter) {$Body.params.inventory.host_router=$HostRouter}
-		if ($OOBIPAddress) {$Body.params.inventory.oob_ip=$OOBIPAddress}
-		if ($OOBHostSubnetMask) {$Body.params.inventory.oob_netmask=$OOBHostSubnetMask}
-		if ($OOBRouter) {$Body.params.inventory.oob_router=$OOBRouter}
-		if ($HWPurchaseDate) {$Body.params.inventory.date_hw_purchase=$HWPurchaseDate}
-		if ($HWInstallationDate) {$Body.params.inventory.date_hw_install=$HWInstallationDate}
-		if ($HWMaintenanceExpiryDate) {$Body.params.inventory.date_hw_expiry=$HWMaintenanceExpiryDate}
-		if ($HWDecommissioningDate) {$Body.params.inventory.date_hw_decomm=$HWDecommissioningDate}
-		if ($SiteAddressA) {$Body.params.inventory.site_address_a=$SiteAddressA}
-		if ($SiteAddressB) {$Body.params.inventory.site_address_b=$SiteAddressB}
-		if ($SiteAddressC) {$Body.params.inventory.site_address_c=$SiteAddressC}
-		if ($SiteCity) {$Body.params.inventory.site_city=$SiteCity}
-		if ($SiteState) {$Body.params.inventory.site_state=$SiteState}
-		if ($SiteCountry) {$Body.params.inventory.site_country=$SiteCountry}
-		if ($SiteZIPCode) {$Body.params.inventory.site_zip=$SiteZIPCode}
-		if ($SiteRackLocation) {$Body.params.inventory.site_rack=$SiteRackLocation}
-		if ($SiteNotes) {$Body.params.inventory.site_notes=$SiteNotes}
-		if ($PrimaryPOCName) {$Body.params.inventory.poc_1_name=$PrimaryPOCName}
-		if ($PrimaryEmail) {$Body.params.inventory.poc_1_email=$PrimaryEmail}
-		if ($PrimaryPOCPhoneA) {$Body.params.inventory.poc_1_phone_a=$PrimaryPOCPhoneA}
-		if ($PrimaryPOCPhoneB) {$Body.params.inventory.poc_1_phone_b=$PrimaryPOCPhoneB}
-		if ($PrimaryPOCMobileNumber) {$Body.params.inventory.poc_1_cell=$PrimaryPOCMobileNumber}
-		if ($PrimaryPOCScreenName) {$Body.params.inventory.poc_1_screen=$PrimaryPOCScreenName}
-		if ($PrimaryPOCnNotes) {$Body.params.inventory.poc_1_notes=$PrimaryPOCnNotes}
-		if ($SecondaryPOCName) {$Body.params.inventory.poc_2_name=$SecondaryPOCName}
-		if ($SecondaryPOCEmail) {$Body.params.inventory.poc_2_email=$SecondaryPOCEmail}
-		if ($SecondaryPOCPhoneA) {$Body.params.inventory.poc_2_phone_a=$SecondaryPOCPhoneA}
-		if ($SecondaryPOCPhoneB) {$Body.params.inventory.poc_2_phone_b=$SecondaryPOCPhoneB}
-		if ($SecondaryPOCMobileNumber) {$Body.params.inventory.poc_2_cell=$SecondaryPOCMobileNumber}
-		if ($SecondaryPOCScreenName) {$Body.params.inventory.poc_2_screen=$SecondaryPOCScreenName}
-		if ($SecondaryPOCNotes) {$Body.params.inventory.poc_2_notes=$SecondaryPOCNotes}
+		if ($Type) { $Body.params.inventory.type = $Type }
+		if ($TypeDetails) { $Body.params.inventory.type_full = $TypeDetails }
+		if ($Name) { $Body.params.inventory.name = $Name }
+		if ($Alias) { $Body.params.inventory.alias = $Alias }
+		if ($OSName) { $Body.params.inventory.os = $OSName }
+		if ($OSFullName) { $Body.params.inventory.os_full = $OSFullName }
+		if ($OSShortName) { $Body.params.inventory.os_short = $OSShortName }
+		if ($SerialNumberA) { $Body.params.inventory.serialno_a = $SerialNumberA }
+		if ($SerialNumberB) { $Body.params.inventory.serialno_b = $SerialNumberB }
+		if ($Tag) { $Body.params.inventory.tag = $Tag }
+		if ($AssetTag) { $Body.params.inventory.asset_tag = $AssetTag }
+		if ($MACAddressA) { $Body.params.inventory.macaddress_a = $MACAddressA }
+		if ($MACAddressB) { $Body.params.inventory.macaddress_b = $MACAddressB }
+		if ($Hardware) { $Body.params.inventory.hardware = $Hardware }
+		if ($DetailedHardware) { $Body.params.inventory.hardware_full = $DetailedHardware }
+		if ($Software) { $Body.params.inventory.software = $Software }
+		if ($SoftwareDetails) { $Body.params.inventory.software_full = $SoftwareDetails }
+		if ($SoftwareApplicationA) { $Body.params.inventory.software_app_a = $SoftwareApplicationA }
+		if ($SoftwareApplicationB) { $Body.params.inventory.software_app_b = $SoftwareApplicationB }
+		if ($SoftwareApplicationC) { $Body.params.inventory.software_app_c = $SoftwareApplicationC }
+		if ($SoftwareApplicationD) { $Body.params.inventory.software_app_d = $SoftwareApplicationD }
+		if ($SoftwareApplicationE) { $Body.params.inventory.software_app_e = $SoftwareApplicationE }
+		if ($ContactPerson) { $Body.params.inventory.contact = $ContactPerson }
+		if ($Location) { $Body.params.inventory.location = $Location }
+		if ($LocationLatitude) { $Body.params.inventory.location_lat = $LocationLatitude }
+		if ($LocationLongitude) { $Body.params.inventory.location_lon = $LocationLongitude }
+		if ($Notes) { $Body.params.inventory.notes = $Notes }
+		if ($Chassis) { $Body.params.inventory.chassis = $Chassis }
+		if ($Model) { $Body.params.inventory.model = $Model }
+		if ($HWArchitecture) { $Body.params.inventory.hw_arch = $HWArchitecture }
+		if ($Vendor) { $Body.params.inventory.vendor = $Vendor }
+		if ($ContractNumber) { $Body.params.inventory.contract_number = $ContractNumber }
+		if ($InstallerName) { $Body.params.inventory.installer_name = $InstallerName }
+		if ($DeploymentStatus) { $Body.params.inventory.deployment_status = $DeploymentStatus }
+		if ($URLA) { $Body.params.inventory.url_a = $URLA }
+		if ($URLB) { $Body.params.inventory.url_b = $URLB }
+		if ($URLC) { $Body.params.inventory.url_c = $URLC }
+		if ($HostNetworks) { $Body.params.inventory.host_networks = $HostNetworks }
+		if ($HostSubnetMask) { $Body.params.inventory.host_netmask = $HostSubnetMask }
+		if ($HostRouter) { $Body.params.inventory.host_router = $HostRouter }
+		if ($OOBIPAddress) { $Body.params.inventory.oob_ip = $OOBIPAddress }
+		if ($OOBHostSubnetMask) { $Body.params.inventory.oob_netmask = $OOBHostSubnetMask }
+		if ($OOBRouter) { $Body.params.inventory.oob_router = $OOBRouter }
+		if ($HWPurchaseDate) { $Body.params.inventory.date_hw_purchase = $HWPurchaseDate }
+		if ($HWInstallationDate) { $Body.params.inventory.date_hw_install = $HWInstallationDate }
+		if ($HWMaintenanceExpiryDate) { $Body.params.inventory.date_hw_expiry = $HWMaintenanceExpiryDate }
+		if ($HWDecommissioningDate) { $Body.params.inventory.date_hw_decomm = $HWDecommissioningDate }
+		if ($SiteAddressA) { $Body.params.inventory.site_address_a = $SiteAddressA }
+		if ($SiteAddressB) { $Body.params.inventory.site_address_b = $SiteAddressB }
+		if ($SiteAddressC) { $Body.params.inventory.site_address_c = $SiteAddressC }
+		if ($SiteCity) { $Body.params.inventory.site_city = $SiteCity }
+		if ($SiteState) { $Body.params.inventory.site_state = $SiteState }
+		if ($SiteCountry) { $Body.params.inventory.site_country = $SiteCountry }
+		if ($SiteZIPCode) { $Body.params.inventory.site_zip = $SiteZIPCode }
+		if ($SiteRackLocation) { $Body.params.inventory.site_rack = $SiteRackLocation }
+		if ($SiteNotes) { $Body.params.inventory.site_notes = $SiteNotes }
+		if ($PrimaryPOCName) { $Body.params.inventory.poc_1_name = $PrimaryPOCName }
+		if ($PrimaryEmail) { $Body.params.inventory.poc_1_email = $PrimaryEmail }
+		if ($PrimaryPOCPhoneA) { $Body.params.inventory.poc_1_phone_a = $PrimaryPOCPhoneA }
+		if ($PrimaryPOCPhoneB) { $Body.params.inventory.poc_1_phone_b = $PrimaryPOCPhoneB }
+		if ($PrimaryPOCMobileNumber) { $Body.params.inventory.poc_1_cell = $PrimaryPOCMobileNumber }
+		if ($PrimaryPOCScreenName) { $Body.params.inventory.poc_1_screen = $PrimaryPOCScreenName }
+		if ($PrimaryPOCnNotes) { $Body.params.inventory.poc_1_notes = $PrimaryPOCnNotes }
+		if ($SecondaryPOCName) { $Body.params.inventory.poc_2_name = $SecondaryPOCName }
+		if ($SecondaryPOCEmail) { $Body.params.inventory.poc_2_email = $SecondaryPOCEmail }
+		if ($SecondaryPOCPhoneA) { $Body.params.inventory.poc_2_phone_a = $SecondaryPOCPhoneA }
+		if ($SecondaryPOCPhoneB) { $Body.params.inventory.poc_2_phone_b = $SecondaryPOCPhoneB }
+		if ($SecondaryPOCMobileNumber) { $Body.params.inventory.poc_2_cell = $SecondaryPOCMobileNumber }
+		if ($SecondaryPOCScreenName) { $Body.params.inventory.poc_2_screen = $SecondaryPOCScreenName }
+		if ($SecondaryPOCNotes) { $Body.params.inventory.poc_2_notes = $SecondaryPOCNotes }
 
 
 		$BodyJSON = ConvertTo-Json $Body
-		write-verbose $BodyJSON
+		Write-Verbose $BodyJSON
 		
 		try {
-			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
+			$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType 'application/json' -Headers @{ Authorization = "Bearer $session" } -Body $BodyJSON -Method Post
 			# if ($a.result) {$a.result} else {$a.error}
-			if ($a.result) {$a.result} else {$a.error}
-		} catch {
+			if ($a.result) { $a.result } else { $a.error }
+		}
+		catch {
 			Write-Host "$_"
-			Write-Host "Too many entries to return from Zabbix server. Check/reduce the filters." -f cyan
+			Write-Host 'Too many entries to return from Zabbix server. Check/reduce the filters.' -f cyan
 		}
 	}
 
